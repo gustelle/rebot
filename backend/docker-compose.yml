@@ -1,0 +1,74 @@
+version: "3.0"
+services:
+
+  # build the dependencies separately
+  # so that code changes do not require to reload all the packages from pip
+  dependencies:
+    image: gustelle/rep_scraper_deps
+    build:
+      context: .
+      dockerfile: Dockerfile-deps
+
+  tasks:
+    image: gustelle/rep_scraper_tasks
+    build:
+      context: .
+    environment:
+      - ES_HOST=${ELASTIC_HOST}
+      - ES_PAGE_SIZE=${ELASTIC_PAGE_SIZE}
+      - ES_SHARDS=${ELASTIC_SHARDS_NUMBER}
+      - ES_REPLICAS=${ELASTIC_REPLICAS_NUMBER}
+      - FORCE_REFRESH=${FORCE_REFRESH}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+      - SENTRY_URL=${SENTRY_URL}
+      - ENVIRONMENT=${ENVIRONMENT}
+    entrypoint: rqworker high default low --url redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT} --name 'backend' -c settings.sentry
+    depends_on:
+      - dependencies
+
+  scheduled_tasks:
+    image: gustelle/rep_scraper_scheduled_tasks
+    build:
+      context: .
+    environment:
+      - ES_HOST=${ELASTIC_HOST}
+      - ES_PAGE_SIZE=${ELASTIC_PAGE_SIZE}
+      - ES_SHARDS=${ELASTIC_SHARDS_NUMBER}
+      - ES_REPLICAS=${ELASTIC_REPLICAS_NUMBER}
+      - FORCE_REFRESH=${FORCE_REFRESH}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - SENTRY_URL=${SENTRY_URL}
+      - ENVIRONMENT=${ENVIRONMENT}
+    entrypoint: rqscheduler --host ${REDIS_HOST} --port ${REDIS_PORT} --password ${REDIS_PASSWORD}
+    depends_on:
+      - dependencies
+
+  receiver:
+    image: gustelle/rep_scraper_api
+    build:
+      context: .
+    ports:
+      - 8000:8000
+    environment:
+      - ES_HOST=${ELASTIC_HOST} # required by the wait-for-elastic script
+      - ES_SHARDS=${ELASTIC_SHARDS_NUMBER}
+      - ES_REPLICAS=${ELASTIC_REPLICAS_NUMBER}
+      - GUNICORN_BIND=0.0.0.0:8000
+      - GUNICORN_WORKERS=4
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+      - SENTRY_URL=${SENTRY_URL}
+      - ENVIRONMENT=${ENVIRONMENT}
+    depends_on:
+      - dependencies
+      - tasks
+
+  rq-dashboard:
+    image: jaredv/rq-docker:0.0.2
+    command: rq-dashboard -H rq-server
+    environment:
+      - RQ_DASHBOARD_REDIS_URL=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+    ports:
+      - 9181:9181

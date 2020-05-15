@@ -1,0 +1,28 @@
+version: "3.0"
+services:
+
+  web_dependencies:
+    image: gustelle/ci_web_deps
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile-deps.test
+
+  web:
+    image: gustelle/ci_web
+    container_name: ci_web # important, name used in compose-tests.sh
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.test
+    env_file:
+      - .ci.env # --> refers to ci/.env to store QA configuration
+    environment:
+      - ES_HOST=${ELASTIC_HOST}
+      - ES_PAGE_SIZE=${ELASTIC_PAGE_SIZE}
+      - GUNICORN_BIND=0.0.0.0:7000
+      - GUNICORN_WORKERS=2
+      - FIREBASE_SERVICE_KEY=${FIREBASE_SERVICE_KEY}
+      - FIREBASE_LOGIN=${FIREBASE_LOGIN}
+      - FIREBASE_PASSWORD=${FIREBASE_PASSWORD}
+      - INSTALL_BASE_DATA=0
+    depends_on:
+      - web_dependencies

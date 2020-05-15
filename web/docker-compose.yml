@@ -1,0 +1,49 @@
+version: "3.0"
+services:
+
+  web_dependencies:
+    image: gustelle/rep_web_deps
+    build:
+      context: .
+      dockerfile: Dockerfile-deps
+
+  web:
+    image: gustelle/rep_web
+    build:
+      context: .
+    ports:
+      - 7000:7000
+    environment:
+      - ES_HOST=${ELASTIC_HOST}
+      - ES_PAGE_SIZE=${ELASTIC_PAGE_SIZE}
+      - GUNICORN_BIND=0.0.0.0:7000
+      - GUNICORN_WORKERS=2
+      - FIREBASE_SERVICE_KEY=${FIREBASE_SERVICE_KEY}
+      - FIREBASE_LOGIN=${FIREBASE_LOGIN}
+      - FIREBASE_PASSWORD=${FIREBASE_PASSWORD}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+      - INSTALL_BASE_DATA=${INSTALL_BASE_DATA}
+    depends_on:
+      - web_dependencies
+      - tasks
+    volumes:
+      - ./blueprints:/app/blueprints
+
+  tasks:
+    image: gustelle/rep_web_tasks
+    build:
+      context: .
+      dockerfile: Dockerfile-tasks
+    environment:
+      - ES_HOST=${ELASTIC_HOST}
+      - ES_PAGE_SIZE=${ELASTIC_PAGE_SIZE}
+      - FIREBASE_SERVICE_KEY=${FIREBASE_SERVICE_KEY}
+      - FIREBASE_LOGIN=${FIREBASE_LOGIN}
+      - FIREBASE_PASSWORD=${FIREBASE_PASSWORD}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    # entrypoint: rqworker high default low --url redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT} -c settings.sentry
+    depends_on:
+      - web_dependencies

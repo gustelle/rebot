@@ -1,0 +1,26 @@
+version: "3.0"
+services:
+
+  # build the dependencies separately
+  # so that code changes do not require to reload all the packages from pip
+  dependencies:
+    image: gustelle/ci_rep_deps
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile-deps.test
+
+  app:
+    container_name: ci_rep_scraper  # container_name is important to stop the tests when this container is done
+    image: gustelle/ci_rep_scraper
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile.test
+    env_file:
+      - .ci.env # --> refers to ci/.env to store QA configuration
+    environment:                                                                # received from the project settings in circleci
+      - ES_HOST=${ELASTIC_HOST}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@${REDIS_HOST}:${REDIS_PORT}
+      - "PYTHONUNBUFFERED=1"
+      - ENVIRONMENT=${ENVIRONMENT}
+    depends_on:
+      - dependencies

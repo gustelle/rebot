@@ -1,0 +1,19 @@
+
+
+bs4
+jsonschema
+requests
+ujson
+
+# for local devs, include scrapyd in the container
+# latest version of twisted causes a regression
+# twisted==18.9.0
+# scrapy
+# scrapyd
+# scrapyd-client
+
+# mask yourself
+scrapy-random-useragent
+
+# IP rotation using proxycrawl.com
+scrapy-proxycrawl-middleware

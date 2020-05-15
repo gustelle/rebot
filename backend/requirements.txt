@@ -1,0 +1,25 @@
+
+
+gunicorn
+jsonschema
+sanic
+sanicargs
+sanic-babel
+six
+text-unidecode
+ujson
+requests
+
+# sentry
+sentry-sdk==0.14.3
+aiocontextvars
+
+# Tasks
+redis
+rq
+rq-scheduler
+
+# Index & query data
+# use libs corresponding to the verison of ES
+# in my case, i'm using a 6.x
+elasticsearch==6.3.1

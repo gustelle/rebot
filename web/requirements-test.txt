@@ -1,0 +1,9 @@
+
+
+
+# difficult integration with celery
+# see https://github.com/pytest-dev/pytest/issues/4641
+pytest==3.10.1
+pytest-testdox
+pytest-mock
+pytest-sanic

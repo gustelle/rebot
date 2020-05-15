@@ -1,0 +1,25 @@
+FROM gustelle/ci_rep_deps
+
+COPY . /app
+
+# copy these files at the root
+# more simple to manage the path
+ADD ./tests/launch-tests.sh ./app
+ADD ./scripts/wait-for-elastic.sh ./app
+
+WORKDIR /app
+
+RUN \
+    chmod +x launch-tests.sh && \
+    chmod +x wait-for-elastic.sh
+
+RUN groupadd -g 999 docker && \
+    useradd -r -u 999 -g docker docker
+
+RUN mkdir -p /app/logs/
+
+RUN chown -R docker:docker .
+
+USER docker
+
+ENTRYPOINT ["./launch-tests.sh"]
