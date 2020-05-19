@@ -33,7 +33,7 @@ There are 2 params to be configured:
 Each item scraped is sent to the `ON_PROCESS_ITEM` URL with the following body in a POST request :
 * `catalog` : the name of the real estate agency that is being scraped. The catalog name corresponds to the spider name attribute
 * `item` : the real estate property scraped
-* `context` : an additional param to be used (or not) by the service receiving the scraped data. __All the spiders share the same context !__. Thus the context can be considered by the service receiving data as a way to group the real estate agencies
+* `zone` : the geographical zone, as defined in `estate_agents/estate_agents/settings.py`
 
 _The item scraped is compliant with the following schema:
 "properties" : {
