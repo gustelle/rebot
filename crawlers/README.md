@@ -14,22 +14,26 @@ pip install -r estate_agents/requirements.txt
 
 ## Configuration
 
-### configuration of `scrapyd.conf`
+### scrapy config
+`scrapyd.conf` contains :
 The params eggs_dir, logs_dir, items_dir, dbs_dir are used by scrapy
 
-### configuration of `estate_agents/scrapy.cfg`
-The scrapyd server can be configured in the `url` param (default : http://127.0.0.1:6800/)
 
-### configuration of `estate_agents/estate_agents/settings.py`
+### crawlers config
+`estate_agents/scrapy.cfg` contains:
+* `url` param (default : http://127.0.0.1:6800/)
+
+`estate_agents/estate_agents/settings.py`
 There are 2 params to be configured:
 * `ON_PROCESS_ITEM` is the service which will receive the scraped items
-* `DATA_CONTEXT` is a param is to be used by the app receiving the scraped items, giving additional info to handle the items
-For instance, the DATA_CONTEXT may be used by the service receiving the items to define an elasticsearch index where to store data
+* `ZONE` is the geographical zone of the scraped data. This param is quite important because the data sent to the backend are stored / indexed according to this zone
+* `SENTRY_DSN` is used to log exceptions that occur during scraping
+* `SKIP_DIRTY_ITEMS` : if set to True, the items marked as "dirty" by the crawlers are not sent to the backend (for example : price could not be parsed...)
 
 Each item scraped is sent to the `ON_PROCESS_ITEM` URL with the following body in a POST request :
 * `catalog` : the name of the real estate agency that is being scraped. The catalog name corresponds to the spider name attribute
 * `item` : the real estate property scraped
-* `context` : an additional param to be used (or not) by the service receiving the scraped data. __All the spiders share the same context !__. Thus the context can be considered by the service receiving data as a way to group the real estate agencies 
+* `context` : an additional param to be used (or not) by the service receiving the scraped data. __All the spiders share the same context !__. Thus the context can be considered by the service receiving data as a way to group the real estate agencies
 
 _The item scraped is compliant with the following schema:
 "properties" : {
@@ -46,6 +50,9 @@ _The item scraped is compliant with the following schema:
 ## How to scrape data
 
 ```
+export SENTRY_DSN='https://your_sentry_dsn'
+export ON_PROCESS_ITEM='http://backend_ip/reps'
+
 ## Deploy the spiders
 # configuration of the deployment can be done in catalog_crawlers/scrapy.cfg
 

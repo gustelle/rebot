@@ -17,3 +17,6 @@ scrapy-random-useragent
 
 # IP rotation using proxycrawl.com
 scrapy-proxycrawl-middleware
+
+# log exceptions into sentry
+scrapy-sentry

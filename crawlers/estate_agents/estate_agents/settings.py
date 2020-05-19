@@ -67,17 +67,23 @@ ITEM_PIPELINES = {
 
 # send the item to the following URL
 # ON_PROCESS_ITEM = 'http://142.93.186.90:1378/products'
-ON_PROCESS_ITEM = 'http://127.0.0.1:8000/reps'
+ON_PROCESS_ITEM = os.getenv('ON_PROCESS_ITEM', default='http://127.0.0.1:8000/reps')
 
 # if set to True, items crawled and marked as "dirty" will not be sent to the URL 'ON_PROCESS_ITEM'
 # default is False
 SKIP_DIRTY_ITEMS = True
 
 # this Zone information is used by the backend app receiving items
-# it is used to define the index name in which to store the data 
+# it is used to define the index name in which to store the data
 ZONE = 'mel'
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 HTTPCACHE_ENABLED = True
 # HTTPCACHE_DIR = '/app/data/scrapy_cache'
+
+# log scraping exceptions into sentry
+SENTRY_DSN = os.getenv('SENTRY_DSN')
+EXTENSIONS = {
+    "scrapy_sentry.extensions.Errors":10,
+}
