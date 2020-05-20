@@ -31,7 +31,7 @@ class BaseSpider(scrapy.Spider):
         """
         This is a product detail page
         """
-        self.logger.info(f"Parsing {resp.request.url}")
+        self.logger.debug(f"Parsing {resp.request.url}")
 
         loader = ItemLoader(item=EstateProperty(), response=resp)
         loader.add_value("url", resp.request.url)
@@ -47,7 +47,7 @@ class BaseSpider(scrapy.Spider):
         if media_dirty:
             for _pic in media_dirty:
                 media.append(f"http:{_pic}")
-                self.logger.info(f"Extracted media : {_pic}")
+                self.logger.debug(f"Extracted media : {_pic}")
         else:
             # fallback to the logo
             # there are lots of properties without media on this web

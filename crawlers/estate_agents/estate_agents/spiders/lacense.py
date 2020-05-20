@@ -85,5 +85,5 @@ class HousesForSaleSpider(BaseSpider):
 
         # go to next page
         self.page += 1
-        next_page = r.xpath("(//a[@class='page_suivante']/@href)[1]").extract()
+        next_page = r.xpath("(//a[@class='page_suivante']/@href)[1]").extract_first()
         yield scrapy.Request(f"http://www.immo-lacense.com/type_bien/{next_page}")

@@ -79,7 +79,7 @@ ZONE = 'mel'
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
-HTTPCACHE_ENABLED = True
+HTTPCACHE_ENABLED = False
 # HTTPCACHE_DIR = '/app/data/scrapy_cache'
 
 # log scraping exceptions into sentry
