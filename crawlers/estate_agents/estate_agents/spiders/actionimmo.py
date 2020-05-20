@@ -60,12 +60,8 @@ class BaseSpider(scrapy.Spider):
         try:
             m = re.search(r'(?P<price_1>\d{1,})\s(?P<price_2>\d{1,}).*', price_dirty)
             loader.add_value('price', float(f"{m.group('price_1')}{m.group('price_2')}"))
-        except TypeError as e:
-            self.logger.warning(f"Could not parse {price_dirty}, {e.message}")
-            # mark the item as dirty
-            # to avoid sending it
-            loader.add_value('is_dirty', True)
-        except ValueError as e:
+        except Exception as e:
+            # can be AttributeError, TypeError or ValueError
             self.logger.warning(f"Could not parse {price_dirty}, {e.message}")
             # mark the item as dirty
             # to avoid sending it
