@@ -10,6 +10,9 @@ Spiders are deployed with scrapyd-client, thus it has to be installed first:
 ```
 pip install scrapyd-client
 pip install -r estate_agents/requirements.txt
+
+# start scrapyd :
+scrapyd
 ```
 
 ## Configuration
