@@ -17,7 +17,7 @@ SPIDER_MODULES = ['estate_agents.spiders']
 NEWSPIDER_MODULE = 'estate_agents.spiders'
 
 # do not log to much
-LOG_LEVEL = 'DEBUG'
+LOG_LEVEL = 'INFO'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'catalog_crawlers (+http://www.yourdomain.com)'

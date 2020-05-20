@@ -69,7 +69,7 @@ def strip(value):
 
 def log_input(value):
     try:
-        logger.info(f'Value received : {uft8_serializer(value)}')
+        logger.debug(f'Value received : {uft8_serializer(value)}')
     except:
         pass
     return value
@@ -158,6 +158,6 @@ class EstateProperty(Item):
         output_processor=TakeFirst()
     )
     is_dirty = Field(
-        input_processor=MapCompose(log_input, lowercase),
+        input_processor=MapCompose(log_input),
         output_processor=TakeFirst()
     )
