@@ -17,6 +17,8 @@ downloads/
 **/logs/
 **/dbs/
 .eggs/
+**/*.pid
+**/.DS_Store
 lib/
 lib64/
 parts/
