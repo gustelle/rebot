@@ -25,10 +25,11 @@ class HousesForSaleSpider(BaseSpider):
 
     def start_requests(self):
        return [ Request(
-        url = "https://www.immobilier.notaires.fr/pub-services/inotr-www-annonces/v1/annonces?localites=25323&localites=25455&localites=24975&localites=24827&localites=24953&localites=25080&localites=25400&offset=0&page=1&parPage=12&perimetre=0&typeBiens=MAI&typeTransactions=VENTE&typeTransactions=VNI&typeTransactions=VAE",
-        headers={
-            'referer': "https://www.immobilier.notaires.fr/fr/annonces-immobilieres-liste?typeBien=MAI&typeTransaction=VENTE,VNI,VAE&localiteGlobale=6679&localite=25323,25455,24975&page=1&parPage=12",
-            'Content-Type': 'application/json'
+            url="https://www.immobilier.notaires.fr/pub-services/inotr-www-annonces/v1/annonces?departements=59&offset=0&page=1&parPage=12&perimetre=0&typeTransactions=VENTE&typeTransactions=VNI&typeTransactions=VAE",
+            headers={
+                'referer': "https://www.immobilier.notaires.fr/fr/annonces-immobilieres-liste?typeTransaction=VENTE,VNI,VAE&departement=59&page=1&parPage=12",
+                'Content-Type': 'application/json',
+                'Host': 'www.immobilier.notaires.fr'
             }
         )]
 
