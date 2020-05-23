@@ -303,6 +303,26 @@ async def test_list_filter_city(test_cli, mocker, dataset):
     assert all(_p['city'] in cities for _p in response_prods)
 
 
+async def test_list_override_city(test_cli, mocker, dataset):
+    """the cities list provided in param overrides the user's cities filter"""
+    users_dataset = copy.deepcopy(dataset['users']['valid'])
+    data_provider = ProductService(ZONE)
+
+    cities = ['test1', 'test2']
+
+    mock_find = mocker.patch("services.data.data_provider.ProductService.find")
+    mock_count = mocker.patch("services.data.data_provider.ProductService.count")
+
+    response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[1]['id']}&city={','.join(cities)}")
+
+    # assert mock_user is called
+    find_args, find_kwargs = mock_find.call_args
+    count_args, count_kwargs = mock_count.call_args
+
+    assert find_kwargs['city'] == cities
+    assert count_kwargs['city'] == cities
+
+
 async def test_list_max_price(test_cli, mocker, dataset):
     """The list is filtered according to the user's max_price pref"""
     users_dataset = copy.deepcopy(dataset['users']['valid'])
@@ -330,3 +350,23 @@ async def test_list_max_price(test_cli, mocker, dataset):
     response_prods = jay.get('products')
 
     assert all(float(_p['price']) <= max_price for _p in response_prods)
+
+
+async def test_list_override_max_price(test_cli, mocker, dataset):
+    """The list is filtered according to the user's max_price pref"""
+    users_dataset = copy.deepcopy(dataset['users']['valid'])
+    data_provider = ProductService(ZONE)
+
+    max_price = 1
+
+    mock_find = mocker.patch("services.data.data_provider.ProductService.find")
+    mock_count = mocker.patch("services.data.data_provider.ProductService.count")
+
+    response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[1]['id']}&max_price={max_price}")
+
+    # assert mock_user is called
+    find_args, find_kwargs = mock_find.call_args
+    count_args, count_kwargs = mock_count.call_args
+
+    assert find_kwargs['max_price'] == max_price
+    assert count_kwargs['max_price'] == max_price

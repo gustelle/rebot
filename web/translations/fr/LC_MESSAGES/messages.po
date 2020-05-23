@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-05-20 10:12+0200\n"
+"POT-Creation-Date: 2020-05-23 22:02+0200\n"
 "PO-Revision-Date: 2020-05-15 16:14+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -36,6 +36,9 @@ msgstr "Type a number"
 
 msgid "label_show_deja_vu"
 msgstr "Show me the items I've marked as deja vu"
+
+msgid "save_my_search"
+msgstr "Save these filters"
 
 msgid "item_deja_vu"
 msgstr "Mark this item as deja vu"

@@ -33,7 +33,7 @@
                     :show-no-results="false"
                     :hide-selected="true"
                     @search-change="asyncFindCities"
-                    @input="saveFilterLoadEntries"></multiselect>
+                    @input="filterEntries"></multiselect>
                 </b-input-group>
               </b-form-group>
             </b-col>
@@ -42,7 +42,7 @@
             <b-col>
               <b-form-group horizontal label="{{ gettext('label_max_price', request) }}" class="mb-0">
                 <b-input-group>
-                  <b-form-input v-model="max_price" placeholder="{{ gettext('placeholder_max_price', request) }}" @input="saveFilterLoadEntries"></b-form-input>
+                  <b-form-input v-model="max_price" placeholder="{{ gettext('placeholder_max_price', request) }}" @input="filterEntries"></b-form-input>
                 </b-input-group>
               </b-form-group>
             </b-col>
@@ -51,11 +51,17 @@
             <b-col>
               <b-form-group horizontal label="{{ gettext('label_show_deja_vu', request) }}" class="mb-0">
                 <b-input-group>
-                  <b-form-checkbox v-model="show_deja_vu" switch @input="saveFilterLoadEntries"></b-form-checkbox>
+                  <b-form-checkbox v-model="show_deja_vu" switch @input="filterEntries"></b-form-checkbox>
                 </b-input-group>
               </b-form-group>
             </b-col>
           </b-row>
+        </b-col>
+      </b-row>
+
+      <b-row>
+        <b-col>
+          <b-button @click="saveUserFilter">{{ gettext('save_my_search', request) }}</b-button>
         </b-col>
       </b-row>
 
@@ -241,9 +247,11 @@
         that.message = "{{ gettext('loading_entries', request) }}"
         that.isLoading = true
 
-        // console.log('currentPage', that.currentPage)
+        // override possible user filters
+        let cities_ = app.city.join(',')
+        let max_price_ = app.max_price
 
-        let route = `/products?zone=${that.zone}&page=${that.currentPage}&user_id=${that.user_id}&feature=${that.selectedFacets}`
+        let route = `/products?zone=${that.zone}&page=${that.currentPage}&user_id=${that.user_id}&feature=${that.selectedFacets}&city=${cities_}&max_price=${max_price_}`
 
         axios.get(route)
           .then(function (response) {
@@ -348,7 +356,42 @@
 
       },
 
-      saveFilterLoadEntries: function() {
+      filterEntries: function() {
+
+        //now load entries
+        app.loadEntries()
+
+        // load facets
+        app.loadFacets()
+
+      },
+
+      // saveFilterLoadEntries: function() {
+      //
+      //   var that = this
+      //
+      //   axios.post(`/users/${that.user_id}?zone=${that.zone}`, {
+      //     'filter': {
+      //       'max_price': parseInt(that.max_price) || -1,
+      //       'city': that.city,
+      //       'include_deja_vu': Boolean(that.show_deja_vu)  //force as boolean
+      //     }
+      //   })
+      //   .then(function (response) {
+      //     //app.message = response.data.message
+      //     app.notifierVariant = 'success'
+      //     // load entries with the new user preferences
+      //     app.loadUserEntries()
+      //   })
+      //   .catch(function (error) {
+      //     console.log(error)
+      //     app.message = "{{ gettext('unexpected_error', request) }}"
+      //     app.notifierVariant = "warning"
+      //   })
+      //
+      // },
+
+      saveUserFilter: function() {
 
         var that = this
 
@@ -363,7 +406,7 @@
           //app.message = response.data.message
           app.notifierVariant = 'success'
           // load entries with the new user preferences
-          app.loadUserEntries()
+          // app.loadUserEntries()
         })
         .catch(function (error) {
           console.log(error)

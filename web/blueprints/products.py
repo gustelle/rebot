@@ -97,6 +97,8 @@ async def list_products(
     zone: str,
     page: int=1,
     user_id: str='',
+    city: fields.List[str]=None,
+    max_price: str='',
     feature: fields.List[str]=None):
     """
     the products of a given zone
@@ -105,6 +107,8 @@ async def list_products(
     :param page: current page of results
     :param user_id: id of the current user
     :param feature: an optional list of comma separated features
+    :param city: when set, this list overrides the city filter of the user_id
+    :param max_price: when set, this float overrides the max_price filter of the user_id
     """
     if not zone.strip():
         raise InvalidUsage(f"zone must be set")
@@ -122,6 +126,28 @@ async def list_products(
     if feature:
         feature = [urllib.parse.unquote(item.strip()) for item in feature if item.strip()]
         LOGGER.debug(f"Filtering on feature: {feature}")
+
+    if max_price:
+        try:
+            max_price = float(max_price)
+        except:
+            LOGGER.warning(f"Ignored param max_price {max_price}, could not be parsed to float")
+            max_price = 0.0
+
+    # override user max_price
+    if max_price and max_price > 0.0:
+        user.filter.max_price = max_price
+        LOGGER.debug(f"Param max_price overriden : {max_price}")
+
+    # to avoid errors during querying remove all blank items
+    if city:
+        city = [urllib.parse.unquote(item.strip()) for item in city if item.strip()]
+        LOGGER.debug(f"Filtering on city: {city}")
+
+    # override user city
+    if city:
+        user.filter.city = city
+        LOGGER.debug(f"Param city : {city}")
 
     ##################################################
     # filter based on user prefs
