@@ -21,6 +21,11 @@ class BaseSpider(scrapy.Spider):
         "media": "//ul[contains(@class, 'imageGallery')]//img/@src"
     }
 
+    special_fields = {
+        "area": "//span[contains(text(), 'Surface habitable')]/following-sibling::span/text()"
+    }
+
+
 
     def parse_product(self, resp):
         """
@@ -32,6 +37,16 @@ class BaseSpider(scrapy.Spider):
         # for the standard fields, extraction is straight forward
         for field, xpath in list(self.standard_fields.items()):
             loader.add_xpath(field, xpath)
+
+        # area is in the title
+        area_dirty = resp.xpath(self.special_fields['area']).extract_first()
+        try:
+            m = re.search(r'(?P<area>\d+)\sm.+', area_dirty)
+            float_area = float(m.group('area'))
+            loader.add_value('area', float_area)
+        except Exception as e:
+            self.logger.error(e)
+            # parsing error on area is not a cause of dirty item
 
         yield loader.load_item()
 

@@ -214,8 +214,8 @@ async def test_list_exclude_deja_vu(test_cli, mocker, dataset):
     # take user[1] (id=2) which has some deja_vu
     # and make a manual exclusion of the deja_vu
     user_entries = data_provider.find(
-        city=users_dataset[1]['filter']['city'],
-        max_price=users_dataset[1]['filter']['max_price'],
+        # city=users_dataset[1]['filter']['city'],
+        # max_price=users_dataset[1]['filter']['max_price'],
         exclude=users_dataset[1]['deja_vu'][ZONE]
     )
 
@@ -238,6 +238,10 @@ async def test_list_exclude_deja_vu(test_cli, mocker, dataset):
     # assert list are the same
     # which means all the products of user_entries are in response_prods and vice-versa
     assert all(_p.meta.id in [k['_id'] for k in response_prods] for _p in user_entries)
+
+    print([k.meta.id for k in user_entries])
+    print("--------------------------------")
+    print([_p['_id'] for _p in response_prods])
     assert all(_p['_id'] in [k.meta.id for k in user_entries] for _p in response_prods)
 
 
@@ -248,8 +252,8 @@ async def test_list_include_deja_vu(test_cli, mocker, dataset):
 
     # do not exclude deja_vu
     raw_entries = data_provider.find(
-        city=users_dataset[1]['filter']['city'],
-        max_price=users_dataset[1]['filter']['max_price'],
+        # city=users_dataset[1]['filter']['city'],
+        # max_price=users_dataset[1]['filter']['max_price'],
     )
 
     # make sur the filter include_deja_vu is false
@@ -283,8 +287,8 @@ async def test_list_filter_city(test_cli, mocker, dataset):
 
     # do not exclude deja_vu
     raw_entries = data_provider.find(
-        city=cities,
-        max_price=users_dataset[1]['filter']['max_price'],
+        # city=cities,
+        # max_price=users_dataset[1]['filter']['max_price'],
         exclude=users_dataset[1]['deja_vu'][ZONE]
     )
 
@@ -332,8 +336,8 @@ async def test_list_max_price(test_cli, mocker, dataset):
 
     # do not exclude deja_vu
     raw_entries = data_provider.find(
-        city=users_dataset[1]['filter']['city'],
-        max_price=max_price,
+        # city=users_dataset[1]['filter']['city'],
+        # max_price=max_price,
         exclude=users_dataset[1]['deja_vu'][ZONE]
     )
 

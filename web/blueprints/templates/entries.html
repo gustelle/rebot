@@ -123,7 +123,11 @@
                         <div class="card-body">
                           <h5 class="card-title"><b-link :href="card.url" target="_blank">[[card.title]]</b-link></h5>
                           <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-city fa-fw" style="margin-right: 0.5rem"></i>[[card.city]]</h6>
-                          <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-sign fa-fw" style="margin-right: 0.5rem"></i>[[card.catalog]]</h6>
+                          <h6 class="card-subtitle mb-2 text-muted">
+                            <b-link v-on:click="filterByCatalog(card.catalog)">
+                              <i class="fas fa-sign fa-fw" style="margin-right: 0.5rem"></i>[[catalogs[card.catalog].long_name]]
+                            </b-link>
+                          </h6>
                           <p class="card-text">
                             <b-form-checkbox
                               v-model="card.deja_vu"
@@ -183,6 +187,8 @@
       show_deja_vu: false,
       // mutliple city can be selected
       city: [],
+      // the selected catalog for Filtering
+      catalog: '',
       // the list of possible cities
       citiesList: [],
       isLoadingCities: false,
@@ -251,7 +257,7 @@
         let cities_ = app.city.join(',')
         let max_price_ = app.max_price
 
-        let route = `/products?zone=${that.zone}&page=${that.currentPage}&user_id=${that.user_id}&feature=${that.selectedFacets}&city=${cities_}&max_price=${max_price_}`
+        let route = `/products?zone=${that.zone}&page=${that.currentPage}&user_id=${that.user_id}&feature=${that.selectedFacets}&city=${cities_}&max_price=${max_price_}&catalog=${that.catalog}`
 
         axios.get(route)
           .then(function (response) {
@@ -268,6 +274,7 @@
             if (entries.length>0) {
               _ = []
               entries.forEach(function(element) {
+
                 let item = {
                   'title' : element.title,
                   'description': element.description,
@@ -278,7 +285,6 @@
                   'price': element.price,
                   'url': element.url,
                   'media': element.media,
-                  'catalog': catalogs[element.catalog].long_name,
                   'tbv': (that.user_tbv.includes(element._id)),
                   'deja_vu': (that.user_deja_vu.includes(element._id)),
                   'features': element.features,
@@ -366,30 +372,17 @@
 
       },
 
-      // saveFilterLoadEntries: function() {
-      //
-      //   var that = this
-      //
-      //   axios.post(`/users/${that.user_id}?zone=${that.zone}`, {
-      //     'filter': {
-      //       'max_price': parseInt(that.max_price) || -1,
-      //       'city': that.city,
-      //       'include_deja_vu': Boolean(that.show_deja_vu)  //force as boolean
-      //     }
-      //   })
-      //   .then(function (response) {
-      //     //app.message = response.data.message
-      //     app.notifierVariant = 'success'
-      //     // load entries with the new user preferences
-      //     app.loadUserEntries()
-      //   })
-      //   .catch(function (error) {
-      //     console.log(error)
-      //     app.message = "{{ gettext('unexpected_error', request) }}"
-      //     app.notifierVariant = "warning"
-      //   })
-      //
-      // },
+      filterByCatalog: function(cat) {
+
+        app.catalog = cat
+
+        //now load entries
+        app.loadEntries()
+
+        // load facets
+        app.loadFacets()
+
+      },
 
       saveUserFilter: function() {
 
@@ -405,6 +398,7 @@
         .then(function (response) {
           //app.message = response.data.message
           app.notifierVariant = 'success'
+          app.message = "{{ gettext('filter_save_success', request) }}"
           // load entries with the new user preferences
           // app.loadUserEntries()
         })

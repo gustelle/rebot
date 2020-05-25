@@ -20,6 +20,7 @@ class BaseSpider(scrapy.Spider):
         "description": "//p[@itemprop='description']/text()",
         "sku": "//span[contains(@class, 'ref')]/following::text()",
         "city": "(//div[@class='tab-content']//tbody/tr[1]/th)[2]",  # strip()
+        "area": "//span[@itemprop='floorSize']/text()",
         "price": "//span[@itemprop='price']/@content",  # 299 000 €
     }
 
@@ -39,7 +40,6 @@ class BaseSpider(scrapy.Spider):
         # for the standard fields, extraction is straight forward
         for field, xpath in list(self.standard_fields.items()):
             loader.add_xpath(field, xpath)
-
 
         # media url are not complete
         media_dirty = resp.xpath(self.special_fields['media']).extract()

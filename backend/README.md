@@ -31,7 +31,7 @@ run the following:
 ```
 docker-compose up --build
 
-# eventually create the Elasticsearch index (if not existing) for the context
+# create the Elasticsearch index (if not existing) for the context
 # example below of a new index created for the context 'my_context', the app running on localhost
 
 curl -d '{"zone": "my_zone"}'  -H "Content-Type: application/json" -X POST 'http://localhost:8000/indices'

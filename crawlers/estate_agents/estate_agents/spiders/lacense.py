@@ -23,6 +23,7 @@ class BaseSpider(scrapy.Spider):
         # "city": "//h1/text()", # pattern is city - xxx
         "media": "//div[contains(@class, 'item-slider')]//img/@src",  # ../xxx
         "price": "(//span[@class='hono_inclus_price']/text())[1]",  # ** 650 000 €
+        "area": "//img[@src='../externalisation/gli/agence-de-la-cense/catalog/images/m2.svg']/@alt" # 72 m2
     }
 
     def parse_product(self, resp):
@@ -50,16 +51,20 @@ class BaseSpider(scrapy.Spider):
             m = re.search(r'(?P<price>\d{1,}).*', price_dirty)
             float_price = float(m.group('price'))*1000
             loader.add_value('price', float_price)
-        except TypeError as e:
+        except Exception as e:
             self.logger.error(e)
             # mark the item as dirty
             # to avoid sending it
             loader.add_value('is_dirty', True)
-        except ValueError as e:
+
+        area_dirty = resp.xpath(self.special_fields['area']).extract_first()
+        try:
+            m = re.search(r'(?P<area>\d+)\sm.+', area_dirty)
+            float_area = float(m.group('area'))
+            loader.add_value('area', float_area)
+        except Exception as e:
             self.logger.error(e)
-            # mark the item as dirty
-            # to avoid sending it
-            loader.add_value('is_dirty', True)
+            # parsing error on area is not a cause of dirty item
 
         yield loader.load_item()
 

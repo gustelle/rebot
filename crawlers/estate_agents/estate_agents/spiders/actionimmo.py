@@ -20,6 +20,7 @@ class BaseSpider(scrapy.Spider):
         "description": "//p[@class='overwrap']/text()",
         "sku": "(//div[@class='property-detail']/div)[1]/span[2]/h5/text()",
         "city": "(//div[@class='property-detail']/div)[3]/span[2]/text()",
+        "area": "//span[normalize-space(text())='Surf. totale']/following-sibling::span/text()",
     }
 
     special_fields = {

@@ -26,6 +26,7 @@ class BaseSpider(scrapy.Spider):
     special_fields = {
         "sku": "//li[@itemprop='productID']/text()",  # Détails du bien - Référence : FR386124
         "title_legacy": "//div[@class='bienTitle']/h2/text()",
+        "area": "//span[contains(text(), 'Surface habitable')]/following-sibling::span/text()" #145 m2
     }
 
     def parse_product(self, resp):
@@ -60,8 +61,21 @@ class BaseSpider(scrapy.Spider):
 
         # sku is preprended by dirty text
         sku_dirty = resp.xpath(self.special_fields['sku']).extract_first()
-        m = re.search(r'\s{0,}\S{3}\s{1,}(?P<ref>.+)\s{0,}', sku_dirty)
-        loader.add_value('sku', m.group('ref'))
+        try:
+            m = re.search(r'\s{0,}\S{3}\s{1,}(?P<ref>.+)\s{0,}', sku_dirty)
+            loader.add_value('sku', m.group('ref'))
+        except Exception as e:
+            self.logger.error(e)
+            loader.add_value('is_dirty', True)
+
+        area_dirty = resp.xpath(self.special_fields['area']).extract_first()
+        try:
+            m = re.search(r'(?P<area>\d+)\sm.+', area_dirty)
+            float_area = float(m.group('area'))
+            loader.add_value('area', float_area)
+        except Exception as e:
+            self.logger.error(e)
+            # parsing error on area is not a cause of dirty item
 
         yield loader.load_item()
 

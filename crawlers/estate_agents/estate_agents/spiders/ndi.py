@@ -25,6 +25,7 @@ class BaseSpider(scrapy.Spider):
         "city": "(//div[@class='infos']/h2/em)[2]",  # supprimer le code postal
         "price": "//div[contains(@class, 'price')]/text()",  # outputs 224 500 --> format 139000
         "description": "//div[contains(@class,'description')]//text()",  # need to concat the values
+        "area": "//i[contains(@class, 'fa-arrows-alt')]/following::em[1]"
     }
 
     def parse_product(self, resp):
@@ -42,13 +43,32 @@ class BaseSpider(scrapy.Spider):
 
             # city is preprended with zipcode, remove it
             city_dirty = resp.xpath(self.special_fields['city']).extract_first()
-            m = re.search(r'(?P<city>.+)\s?\(\d{1,}?\)?', city_dirty)
-            loader.add_value('city', m.group('city'))
+            try:
+                m = re.search(r'(?P<city>.+)\s?\(\d{1,}?\)?', city_dirty)
+                loader.add_value('city', m.group('city'))
+            except Exception as e:
+                self.logger.error(e)
+                # mark the item as dirty
+                # to avoid sending it
+                loader.add_value('is_dirty', True)
 
             # price contains whitespaces, remove it
             price_dirty = resp.xpath(self.special_fields['price']).extract_first()
-            float_price = float(price_dirty.replace(" ", ""))
-            loader.add_value('price', float_price)
+            try:
+                float_price = float(price_dirty.replace(" ", ""))
+                loader.add_value('price', float_price)
+            except Exception as e:
+                self.logger.error(e)
+                # mark the item as dirty
+                # to avoid sending it
+                loader.add_value('is_dirty', True)
+
+            area_dirty = resp.xpath(self.special_fields['area']).extract_first()
+            try:
+                loader.add_value('area', float(area_dirty))
+            except Exception as e:
+                self.logger.error(e)
+                # parsing error on area is not a cause of dirty item
 
             # description : join the paragraphs
             loader.add_value('description', ' '.join(resp.xpath(self.special_fields['description']).extract()))

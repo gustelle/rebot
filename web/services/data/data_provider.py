@@ -34,7 +34,7 @@ class _ObjectQuery():
         return session.get(cls, id=id, **kwargs)
 
 
-    def _build_query(self, obj_type, zone=None, city=None, max_price=0, exclude=None, feature=None):
+    def _build_query(self, obj_type, zone=None, city=None, max_price=0, exclude=None, feature=None, catalog=None):
         logger = logging.getLogger('app')
         session = ElasticSession(hosts=[config.ES.ES_HOST], zone=zone)
         es_query = session.search(obj_type)
@@ -56,6 +56,12 @@ class _ObjectQuery():
         else:
             logger.debug(f"ignored param feature: {feature}, must be a list")
 
+        if bool(catalog):
+            q = Q("term", catalog=catalog)
+            es_query = es_query.query(q)
+        else:
+            logger.debug(f"ignored param catalog: {catalog}")
+
         if max_price and max_price>0:
             try:
                 es_query = es_query.filter('range', price={'gte': 0.0, 'lte': float(max_price)})
@@ -76,7 +82,7 @@ class _ObjectQuery():
         return es_query
 
 
-    def find(self, zone, obj_type, page=1, city=None, max_price=0, exclude=None, feature=None):
+    def find(self, zone, obj_type, page=1, city=None, max_price=0, exclude=None, feature=None, catalog=None):
         """
         generic fetcher for objects
 
@@ -85,6 +91,7 @@ class _ObjectQuery():
         :param max_price: optional max price to filter results (0 means no price limit)
         :param exclude: optional list of sku to exclude from the results (leave as None to include all SKU)
         :param feature: optional list of features. A feature is a "term" (a search facet) for Elasticsearch
+        :param catalog: optional, a catalog term
 
         :Example:
         >>> ObjectQuery.find(Product)
@@ -99,7 +106,8 @@ class _ObjectQuery():
             city=city,
             max_price=max_price,
             exclude=exclude,
-            feature=feature
+            feature=feature,
+            catalog=catalog
         )
 
         paginate_start = config.ES.RESULTS_PER_PAGE*(page-1)
@@ -112,7 +120,7 @@ class _ObjectQuery():
         return es_query.execute()
 
 
-    def count(self, zone, obj_type, city=None, max_price=0, exclude=None, feature=None):
+    def count(self, zone, obj_type, city=None, max_price=0, exclude=None, feature=None, catalog=None):
         """
         generic object counter
 
@@ -128,7 +136,8 @@ class _ObjectQuery():
             city=city,
             max_price=max_price,
             exclude=exclude,
-            feature=feature
+            feature=feature,
+            catalog=catalog
         )
 
         logger.debug(f"count query: {es_query.to_dict()}")
@@ -191,21 +200,41 @@ class ProductService():
         return _ObjectQuery().get(self.zone, Product, id=id, **kwargs)
 
 
-    def find(self, page=1, city=None, max_price=0, exclude=None, feature=None):
+    def find(self, page=1, city=None, max_price=0, exclude=None, feature=None, catalog=None):
         """
         returns a paged list of Product filtered on catalog
 
         :param city: optional list of cities
         :param max_price: optional max price to filter results
+        :param catalog: a catalog term
         """
-        return _ObjectQuery().find(self.zone, Product, city=city, max_price=max_price, page=page, exclude=exclude, feature=feature)
+        return _ObjectQuery().find(
+            self.zone,
+            Product,
+            city=city,
+            max_price=max_price,
+            page=page,
+            exclude=exclude,
+            feature=feature,
+            catalog=catalog)
 
 
-    def count(self, city=None, max_price=0, exclude=None, feature=None):
+    def count(self, city=None, max_price=0, exclude=None, feature=None, catalog=None):
         """
         counts all Products on catalog
+
+        :param city: optional list of cities
+        :param max_price: optional max price to filter results
+        :param catalog: a catalog term
         """
-        return _ObjectQuery().count(self.zone, Product, city=city, max_price=max_price, exclude=exclude, feature=feature)
+        return _ObjectQuery().count(
+            self.zone,
+            Product,
+            city=city,
+            max_price=max_price,
+            exclude=exclude,
+            feature=feature,
+            catalog=catalog)
 
 
     def search(self):

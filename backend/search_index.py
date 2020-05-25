@@ -53,6 +53,7 @@ _MAPPING = {
             "city" : {"type" : "keyword", "normalizer": "folding_normalizer"},
             "features" : {"type" : "keyword", "normalizer": "folding_normalizer"},
             "price" : {"type" : "scaled_float", "scaling_factor": 100},
+            "area" : {"type" : "scaled_float", "scaling_factor": 100},
             "media" :  {"type" : "text", "index": "false"},
             "url" : {"type" : "text", "index": "false"}
         }

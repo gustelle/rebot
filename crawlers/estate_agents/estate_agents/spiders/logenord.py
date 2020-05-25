@@ -24,10 +24,9 @@ class BaseSpider(scrapy.Spider):
         "media": "//img[@class='rsTmb']/@src",
     }
 
-    # special_fields = {
-        # "price": "//td[@itemprop='price']/@content",
-        # "media": "//img[@class='rsTmb']/@src",  # prefix with domain
-    # }
+    special_fields = {
+        "area": "//td[normalize-space(text())='Surface']/following-sibling::td/text()",
+    }
 
     def parse_product(self, resp):
         """
@@ -39,6 +38,13 @@ class BaseSpider(scrapy.Spider):
         # for the standard fields, extraction is straight forward
         for field, xpath in list(self.standard_fields.items()):
             loader.add_xpath(field, xpath)
+
+        area_dirty = resp.xpath(self.special_fields['area']).extract_first()
+        try:
+            loader.add_value('area', float(area_dirty))
+        except Exception as e:
+            self.logger.error(e)
+            # parsing error on area is not a cause of dirty item
 
         yield loader.load_item()
 

@@ -25,6 +25,7 @@ class BaseSpider(scrapy.Spider):
         "city": "(//div[contains(@class, 'caracteristiques')]//li)[1]/b/text()",  # faire un strip()
         "media": "//div[contains(@class, 'carrousel-item')]//img/@src",  #prefixer avec le domaine
         "price": "//strong[@class='price']/text()",  # outputs 224 500,00 € --> format 139000
+        "area": "//i[@class='icon-surface']/parent::span/text()"
     }
 
     def parse_product(self, resp):
@@ -55,16 +56,20 @@ class BaseSpider(scrapy.Spider):
                 m = re.search(r'(?P<price>\d{1,}\s\d{1,}).*', price_dirty)
                 float_price = float(m.group('price').replace(" ", ""))
                 loader.add_value('price', float_price)
-            except TypeError as e:
+            except Exception as e:
                 self.logger.error(e)
                 # mark the item as dirty
                 # to avoid sending it
                 loader.add_value('is_dirty', True)
-            except ValueError as e:
+
+            area_dirty = resp.xpath(self.special_fields['area']).extract_first()
+            try:
+                m = re.search(r'\D+(?P<area>\d+)\sm.+', area_dirty)
+                float_area = float(m.group('area'))
+                loader.add_value('area', float_area)
+            except Exception as e:
                 self.logger.error(e)
-                # mark the item as dirty
-                # to avoid sending it
-                loader.add_value('is_dirty', True)
+                # parsing error on area is not a cause of dirty item
 
             yield loader.load_item()
         else:

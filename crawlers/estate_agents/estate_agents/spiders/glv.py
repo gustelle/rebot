@@ -25,6 +25,7 @@ class BaseSpider(scrapy.Spider):
     special_fields = {
         "sku": "//h1/span[contains(@class, 'ref')]/text()",  # extacts - Réf. 2205MD
         "price": "(//span[@class='price']/text())[1]",  # outputs 139 000€ --> format 139000
+        "area": "//li[normalize-space(text())='Superficie :']/child::span/text()",
     }
 
     def parse_product(self, resp):
@@ -52,16 +53,20 @@ class BaseSpider(scrapy.Spider):
             m = re.search(r'(?P<price>\d{1,}\s\d{1,}).*', price_dirty)
             float_price = float(m.group('price').replace(" ", ""))
             loader.add_value('price', float_price)
-        except TypeError as e:
+        except Exception as e:
             self.logger.error(e)
             # mark the item as dirty
             # to avoid sending it
             loader.add_value('is_dirty', True)
-        except ValueError as e:
+
+        area_dirty = resp.xpath(self.special_fields['area']).extract_first()
+        try:
+            m = re.search(r'(?P<area>\d+)\sm.+', area_dirty)
+            float_area = float(m.group('area'))
+            loader.add_value('area', float_area)
+        except Exception as e:
             self.logger.error(e)
-            # mark the item as dirty
-            # to avoid sending it
-            loader.add_value('is_dirty', True)
+            # parsing error on area is not a cause of dirty item
 
         yield loader.load_item()
 
@@ -71,7 +76,7 @@ class HousesForSaleSpider(BaseSpider):
     """
     name = 'glv'
     page = 1
-    base_url = f"http://www.glv-immobilier.fr/scrolling-annonces/?type%5B%5D=maison&transaction=vente"
+    base_url = f"http://www.glv-immobilier.fr/recherche/?transaction=vente&secteur%5B%5D=AL"
     start_urls = [base_url + f"&page={page}"]
 
     def parse(self, r):

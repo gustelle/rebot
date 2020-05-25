@@ -20,13 +20,14 @@ logger = logging.getLogger(__name__)
 ESTATE_PROPERTY_SCHEMA = {
     # "type" : "object",
     "properties" : {
-        "sku": {"type" : "string"},
+        "sku"       : {"type" : "string"},
         "title"     : { "type" : "string"},
         "description": { "type" : "string"},
         "price"     : { "type" : "number"},
-        "city"    : { "type" : "string"},
-        "media" : {"type": "array", "items": { "type": "string" }},
-        "url" : {"type" : "string"},
+        "area"      : { "type" : "number"},
+        "city"      : { "type" : "string"},
+        "media"     : {"type": "array", "items": { "type": "string" }},
+        "url"       : {"type" : "string"},
         "is_dirty" : {"type" : "string"},
     },
     "required": ["sku", "title", "price", "city", "url", "media"]
@@ -143,6 +144,10 @@ class EstateProperty(Item):
         output_processor=TakeFirstAcceptBlank()
     )
     price = Field(
+        input_processor=MapCompose(filter_float, log_input),
+        output_processor=TakeFirst()
+    )
+    area = Field(
         input_processor=MapCompose(filter_float, log_input),
         output_processor=TakeFirst()
     )

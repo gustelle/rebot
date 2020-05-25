@@ -24,6 +24,7 @@ class TLBaseSpider(scrapy.Spider):
     special_fields = {
         "sku": "//div[@class='top-infos']//span[@class='ref']/text()",  # extacts Réf.  2500B --> 2500B
         "price": "//div[@class='top-infos']//span[@class='prix']/text()",  # outputs 139 000€ --> format 139000
+        "area": "//span[contains(text(), 'Surf. Hab.')]/following-sibling::span/text()"
     }
 
     def parse_product(self, resp):
@@ -59,6 +60,15 @@ class TLBaseSpider(scrapy.Spider):
                     # mark the item as dirty
                     # to avoid sending it
                     loader.add_value('is_dirty', True)
+
+            area_dirty = resp.xpath(self.special_fields['area']).extract_first()
+            try:
+                m = re.search(r'(?P<area>\d+)\sm', area_dirty)
+                float_area = float(m.group('area'))
+                loader.add_value('area', float_area)
+            except Exception as e:
+                self.logger.error(e)
+                # parsing error on area is not a cause of dirty item
 
             yield loader.load_item()
 

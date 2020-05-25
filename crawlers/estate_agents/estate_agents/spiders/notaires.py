@@ -35,10 +35,11 @@ class HousesForSaleSpider(BaseSpider):
 
     def parse(self, r):
         """
-        traverse all items of the site map page, and jump to each universe
+        response is a JSON object, just tap into the fields
         """
         # parse JSON response
         products = json.loads(r.body)
+
         for item in products['annonceResumeDto']:
             loader = ItemLoader(item=EstateProperty())
             loader.add_value("url", item['urlDetailAnnonceFr'])
@@ -47,6 +48,7 @@ class HousesForSaleSpider(BaseSpider):
             loader.add_value("description", item['descriptionFr'])
             loader.add_value("media", [item['urlPhotoPrincipale']])
             loader.add_value("sku", str(item['annonceId']))
-            loader.add_value("price", str(item['prixTotal']))
-            self.logger.debug(f"Loading ended {loader}")
+            loader.add_value("price", float(item['prixTotal']))
+            loader.add_value("area", float(item['surface']))
+
             yield loader.load_item()

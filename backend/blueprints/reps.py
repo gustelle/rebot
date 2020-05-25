@@ -58,6 +58,7 @@ async def add_rep(request):
             "title"     : { "type" : "string", "minLength": 0}, # allow blank strings
             "description": { "type" : "string"},
             "price"     : { "type" : "number", "minimum": 0},
+            "area"     : { "type" : "number"},
             "city"    : { "type" : "string"},
             "media" : {"type": "array", "items": { "type": "string" }},
             "url" : {"type" : "string"},

@@ -99,16 +99,18 @@ async def list_products(
     user_id: str='',
     city: fields.List[str]=None,
     max_price: str='',
-    feature: fields.List[str]=None):
+    feature: fields.List[str]=None,
+    catalog: str=''):
     """
     the products of a given zone
 
     :param zone: the geographical zone, must be a non-blank string
     :param page: current page of results
-    :param user_id: id of the current user
+    :param user_id: id of the current user. The following user preferences are considered to render the results : 'deja_vu', 'tbv' and 'include_deja_vu'
     :param feature: an optional list of comma separated features
-    :param city: when set, this list overrides the city filter of the user_id
-    :param max_price: when set, this float overrides the max_price filter of the user_id
+    :param city: comma separated list of cities to filter results (user prefs are not considered). When void, we consider the cities should not be considered as a filter
+    :param max_price: float. When set to O, we consider the price should not be considered as a filter
+    :param catalog: optional, the real estate agency on which the real estate property has been scraped. Ignored when void
     """
     if not zone.strip():
         raise InvalidUsage(f"zone must be set")
@@ -127,27 +129,22 @@ async def list_products(
         feature = [urllib.parse.unquote(item.strip()) for item in feature if item.strip()]
         LOGGER.debug(f"Filtering on feature: {feature}")
 
-    if max_price:
-        try:
-            max_price = float(max_price)
-        except:
-            LOGGER.warning(f"Ignored param max_price {max_price}, could not be parsed to float")
-            max_price = 0.0
-
     # override user max_price
-    if max_price and max_price > 0.0:
-        user.filter.max_price = max_price
-        LOGGER.debug(f"Param max_price overriden : {max_price}")
-
-    # to avoid errors during querying remove all blank items
-    if city:
-        city = [urllib.parse.unquote(item.strip()) for item in city if item.strip()]
-        LOGGER.debug(f"Filtering on city: {city}")
+    # if not set, we consider that it's intentional and means that the max_price is 0 (no max_price)
+    if not max_price or not max_price.strip():
+        user.filter.max_price = 0.0
+    else:
+        user.filter.max_price = float(max_price)
 
     # override user city
-    if city:
-        user.filter.city = city
-        LOGGER.debug(f"Param city : {city}")
+    # if not set, we consider that the city should not be considered
+    if not city:
+        user.filter.city = None
+    else:
+        user.filter.city = [urllib.parse.unquote(item.strip()) for item in city if item.strip()]
+
+    if not catalog.strip():
+        catalog = None
 
     ##################################################
     # filter based on user prefs
@@ -164,13 +161,15 @@ async def list_products(
             city=user.filter.city,
             max_price=user.filter.max_price,
             exclude=exclude_items,
-            feature=feature
+            feature=feature,
+            catalog=catalog
         )
         count = service.count(
             city=user.filter.city,
             max_price=user.filter.max_price,
             exclude=exclude_items,
-            feature=feature
+            feature=feature,
+            catalog=catalog
         )
 
         rest = count%config.ES.RESULTS_PER_PAGE

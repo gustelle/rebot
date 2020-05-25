@@ -40,13 +40,27 @@ class HousesForSaleSpider(BaseSpider):
             loader.add_value("url", r.json()['url'])
             loader.add_value("title", r.json()['title'])
 
+            # area is in the title
+            area_dirty = r.json()['title']
+            try:
+                m = re.search(r'\D+(?P<area>\d+)m2.+', area_dirty)
+                float_area = float(m.group('area'))
+                loader.add_value('area', float_area)
+            except Exception as e:
+                self.logger.error(e)
+                # parsing error on area is not a cause of dirty item
+
             loader.add_value("city", item['village'])
             loader.add_value("description", item['WiDescriptionLong'])
             loader.add_value("media", [item['imagename']])
             loader.add_value("price", str(item['AdvertisedPrice']))
 
             sku_dirty = item['reference']
-            m = re.search(r'.+\:\s(?P<ref>.+)', sku_dirty)
-            loader.add_value('sku', m.group('ref'))
+            try:
+                m = re.search(r'.+\:\s(?P<ref>.+)', sku_dirty)
+                loader.add_value('sku', m.group('ref'))
+            except Exception as e:
+                self.logger.error(e)
+                loader.add_value('is_dirty', True)
 
             yield loader.load_item()
