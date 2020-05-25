@@ -122,7 +122,11 @@
                         </b-link>
                         <div class="card-body">
                           <h5 class="card-title"><b-link :href="card.url" target="_blank">[[card.title]]</b-link></h5>
-                          <h6 class="card-subtitle mb-2 text-muted"><i class="fas fa-city fa-fw" style="margin-right: 0.5rem"></i>[[card.city]]</h6>
+                          <h6 class="card-subtitle mb-2 text-muted">
+                            <b-link v-on:click="filterByCity(card.city)">
+                              <i class="fas fa-city fa-fw" style="margin-right: 0.5rem"></i>[[card.city]]
+                            <b-link>
+                          </h6>
                           <h6 class="card-subtitle mb-2 text-muted">
                             <b-link v-on:click="filterByCatalog(card.catalog)">
                               <i class="fas fa-sign fa-fw" style="margin-right: 0.5rem"></i>[[catalogs[card.catalog].long_name]]
@@ -375,11 +379,15 @@
       filterByCatalog: function(cat) {
 
         app.catalog = cat
-
-        //now load entries
         app.loadEntries()
+        app.loadFacets()
 
-        // load facets
+      },
+
+      filterByCity: function(city) {
+
+        app.city = [city]
+        app.loadEntries()
         app.loadFacets()
 
       },
