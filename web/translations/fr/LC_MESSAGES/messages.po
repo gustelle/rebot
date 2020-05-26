@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-05-23 22:02+0200\n"
+"POT-Creation-Date: 2020-05-26 09:20+0200\n"
 "PO-Revision-Date: 2020-05-15 16:14+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -57,4 +57,7 @@ msgstr "No property found"
 
 msgid "items_found"
 msgstr "Properties found"
+
+msgid "item_is_new"
+msgstr "New item"
 

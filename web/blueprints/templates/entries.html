@@ -149,10 +149,11 @@
                             <button type="button" class="btn btn-default btn-sm">
                               <h5><i class="fas fa-euro-sign fa-fw"></i>[[card.price]]</h5>
                             </button>
+                            [[displayArea(card)]]
                           </p>
                         </div>
                         <div v-if="card.is_new" class="card-footer bg-warning">
-                          Nouveauté
+                          {{ gettext('item_is_new', request) }}
                         </div>
                         <div class="card-footer">
                           <i class="fas fa-id-card fa-fw"></i>[[card.sku]]
@@ -292,7 +293,8 @@
                   'tbv': (that.user_tbv.includes(element._id)),
                   'deja_vu': (that.user_deja_vu.includes(element._id)),
                   'features': element.features,
-                  'is_new': element.is_new
+                  'is_new': element.is_new,
+                  'area': element.area
                 }
                 // perf : do not filter items based on deja_vu
                 // we expect the response to be clean
@@ -538,6 +540,13 @@
           return 'outline-secondary'
         }
       },
+
+      displayArea: function(card) {
+        if (typeof(card.area)!=='undefined' && card.area!='') {
+          return card.area + ' m2'
+        }
+        return ''
+      }
 
     },
     computed: {
