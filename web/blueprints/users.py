@@ -35,14 +35,14 @@ def get_user_schema(zone):
                 "type": "object",
                 "properties": {
                     "include_deja_vu": { "type": "boolean" },
-                    "city": { "type": "array" },
+                    "city": { "type": "array", "items": {"type": "string"}},
                     "max_price": { "type": "number" }
                 }
             },
             "zonedlist": {
                 "type": "object",
                 "properties": {
-                    zone: { "type": "array"}
+                    zone: { "type": "array", "items": {"type": "string"}}
                 }
             }
         },

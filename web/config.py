@@ -81,7 +81,7 @@ class StandardConfig(object):
     # when starting the app, some base data are installed
     # if a timestamp is present and fresher than  INSTALLATION_TIMESTAMP_TIMEOUT
     # nothing is instaled
-    INSTALLATION_TIMESTAMP_TIMEOUT = 0  # in seconds, 0 means no timeout, never proceed to install at startup 
+    INSTALLATION_TIMESTAMP_TIMEOUT = 600  # in seconds, 0 means no timeout, never proceed to install at startup 
     INSTALL_BASE_DATA = bool(strtobool(os.getenv('INSTALL_BASE_DATA', default='0')))
 
 

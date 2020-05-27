@@ -32,9 +32,9 @@ class CatalogMeta(FirebaseService):
         super(CatalogMeta, self).__init__(tenant=_tenant)
 
 
-    def get_catalogs(self, lang=None, zone=None):
+    def get_catalogs(self):
         """
-        Returns the list of registered catalogs for a given context lang/zone
+        Returns the list of registered catalogs
         """
         entries = self.all_values()
         catalog_list = []
@@ -48,13 +48,13 @@ class CatalogMeta(FirebaseService):
         self.logger.debug(f"Full catalogs list: {entries}")
 
         # filter eventually the data, depending on args passed
-        if lang is not None and lang:
-            self.logger.debug(f"Filtering on lang: {lang}")
-            catalog_list= [x for x in catalog_list if x.lang == lang]
-
-        if zone is not None and zone:
-            self.logger.debug(f"Filtering on zone: {zone}")
-            catalog_list= [x for x in catalog_list if x.zone == zone]
+        # if lang is not None and lang:
+        #     self.logger.debug(f"Filtering on lang: {lang}")
+        #     catalog_list= [x for x in catalog_list if x.lang == lang]
+        #
+        # if zone is not None and zone:
+        #     self.logger.debug(f"Filtering on zone: {zone}")
+        #     catalog_list= [x for x in catalog_list if x.zone == zone]
 
         return catalog_list
 

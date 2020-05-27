@@ -12,7 +12,7 @@ import time
 
 import ujson as json
 
-from objects import Catalog, User
+from objects import Catalog, User, Area
 
 from tests.data.base_data import ZONE
 
@@ -94,3 +94,27 @@ class TestUserObject(object):
         assert user.filter.include_deja_vu == bool(u_dict["filter"]["include_deja_vu"])
         assert user.filter.city == u_dict["filter"]["city"]
         assert user.filter.max_price == float(u_dict["filter"]["max_price"])
+
+
+@pytest.mark.usefixtures("mocker", "dataset")
+class TestAreaObject(object):
+    """
+    """
+    def test_from_dict(self, mocker, dataset):
+        c_dict = dataset['areas']['valid'][0]
+        area = Area.from_dict(c_dict)
+
+        assert area.name == c_dict["name"]
+        assert area.cities == c_dict["cities"]
+
+
+    def test_init_with_comma_separated_values(self, mocker, dataset):
+        c_dict = dataset['areas']['valid'][0]
+        c_dict['cities'] = ','.join(c_dict['cities'])
+        area = Area.from_dict(c_dict)
+
+        # rollback the changes on the dataset
+        c_dict['cities'] = c_dict['cities'].split(',')
+
+        assert area.name == c_dict["name"]
+        assert area.cities == c_dict["cities"]

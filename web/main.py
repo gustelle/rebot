@@ -9,7 +9,7 @@ from sanic import Sanic
 from sanic_babel import Babel
 
 from blueprints import (catalogs_blueprint, products_blueprint,
-                        users_blueprint, terms_blueprint)
+                        users_blueprint, terms_blueprint, areas_blueprint)
 
 from objects import User
 
@@ -31,6 +31,7 @@ app.register_blueprint(products_blueprint)
 app.register_blueprint(catalogs_blueprint)
 app.register_blueprint(users_blueprint)
 app.register_blueprint(terms_blueprint)
+app.register_blueprint(areas_blueprint)
 
 # register Babel translations
 # fixes translations not found issue
@@ -78,8 +79,9 @@ async def register_base_data(app, loop):
         import datetime
         from services.firebase_service import FirebaseService
         from services.user_service import UserService
+        from services.area_service import AreaService
         from services.data import data_meta
-        from objects import Catalog
+        from objects import Catalog, User, Area
 
         install_me = True
 
@@ -104,7 +106,7 @@ async def register_base_data(app, loop):
             raw_service.set_value("timestamp", datetime.datetime.utcnow().timestamp())
 
             # install catalogs
-            cats_file_path = os.path.sep.join([CWD, 'data', 'catalogs.jl'])
+            cats_file_path = os.path.sep.join([CWD, 'data', 'catalogs.jsonl'])
             if os.path.exists(cats_file_path):
 
                 cat_service = data_meta.CatalogMeta()
@@ -122,7 +124,7 @@ async def register_base_data(app, loop):
 
 
             # install users
-            users_file_path = os.path.sep.join([CWD, 'data', 'users.jl'])
+            users_file_path = os.path.sep.join([CWD, 'data', 'users.jsonl'])
             if os.path.exists(users_file_path):
 
                 u_service = UserService()
@@ -136,3 +138,21 @@ async def register_base_data(app, loop):
                             LOGGER.error(f"User : '{obj}' could not be installed")
             else:
                 LOGGER.error(f"Base users cannot be installed, file {users_file_path} cannot be found")
+
+
+            # install areas
+            areas_file_path = os.path.sep.join([CWD, 'data', 'areas.jsonl'])
+            if os.path.exists(areas_file_path):
+
+                with open(areas_file_path, "r") as _file:
+                    for line in _file:
+                        obj = json.loads(line)
+                        zone = obj.pop("zone")
+                        areas_service = AreaService(zone)
+                        resp = areas_service.register_area(Area.from_dict(obj))
+                        if resp:
+                            LOGGER.info(f"Area : {obj} installed")
+                        else:
+                            LOGGER.error(f"Area : '{obj}' could not be installed")
+            else:
+                LOGGER.error(f"Base areas cannot be installed, file {areas_file_path} cannot be found")

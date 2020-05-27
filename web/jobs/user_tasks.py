@@ -40,8 +40,6 @@ def do_cleanup(zone, user_id):
     u_service = UserService()
     user = u_service.get_user(user_id)
 
-    LOGGER.info(f"User found: {user}")
-
     if not user:
         raise ValueError(f"User {user_id} not found")
 

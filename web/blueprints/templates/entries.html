@@ -14,6 +14,24 @@
         <b-col lg="8">
           <b-row>
             <b-col>
+              <b-form-group horizontal label="{{ gettext('label_areas_list', request) }}">
+                <b-input-group>
+                    <b-form-select
+                      v-model="area"
+                      :options="areasList"
+                      text-field="name"
+                      value-field="name"
+                      @change="filterEntriesByArea">
+                      <template v-slot:first>
+                        <b-form-select-option :value="null" disabled>{{ gettext('placeholder_select_area', request) }}</b-form-select-option>
+                      </template>
+                    </b-form-select>
+                </b-input-group>
+              </b-form-group>
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col>
               <b-form-group horizontal label="{{ gettext('label_cities_list', request) }}">
                 <b-input-group>
                   <multiselect
@@ -149,7 +167,7 @@
                             <button type="button" class="btn btn-default btn-sm">
                               <h5><i class="fas fa-euro-sign fa-fw"></i>[[card.price]]</h5>
                             </button>
-                            [[displayArea(card)]]
+                            [[displayPropertySurface(card)]]
                           </p>
                         </div>
                         <div v-if="card.is_new" class="card-footer bg-warning">
@@ -190,13 +208,17 @@
       isLoading: false,
       max_price: '',
       show_deja_vu: false,
-      // mutliple city can be selected
+      // selected cities
       city: [],
-      // the selected catalog for Filtering
-      catalog: '',
-      // the list of possible cities
+      // possible cities proposed to the user
       citiesList: [],
       isLoadingCities: false,
+      // the selected area (group of cities)
+      area: '',
+      // possible areas proposed to the user
+      areasList: [],
+      // the selected catalog for Filtering
+      catalog: '',
       // for properties list refinement
       facets: [],
       selectedFacets: [],
@@ -212,6 +234,7 @@
       user_tbv: {% if user.get('tbv') and user.get('tbv').get(zone) %}{{ user.get('tbv').get(zone)|tojson }}{% else %}[]{% endif %}          // the list of user tbv
     },
     mounted: function() {
+      this.loadAreas()
       this.loadUserEntries()
     },
     methods: {
@@ -294,7 +317,7 @@
                   'deja_vu': (that.user_deja_vu.includes(element._id)),
                   'features': element.features,
                   'is_new': element.is_new,
-                  'area': element.area
+                  'area': element.area  // the item area has nothing to do with the "area". Item area corresponds to the "surface"
                 }
                 // perf : do not filter items based on deja_vu
                 // we expect the response to be clean
@@ -368,12 +391,47 @@
 
       },
 
+      loadAreas : function() {
+
+        let route = `/areas?zone=${this.zone}`
+        axios.get(route)
+          .then(function (response) {
+
+            entries = response.data.results
+            if (entries.length>0) {
+              entries.forEach(function(element) {
+                // console.log("populate facet", element)
+                app.areasList.push(element)
+              })
+            }
+
+          })
+          .catch(function (error) {
+            console.error(error);
+            app.message = "{{ gettext('unexpected_error', request) }}"
+            app.notifierVariant = "warning"
+          })
+
+      },
+
       filterEntries: function() {
 
-        //now load entries
         app.loadEntries()
+        app.loadFacets()
 
-        // load facets
+      },
+
+      // area here is the concept of grouping cities
+      // it has nothing to do with the area attribute of a real estate property which corresponds to the "surface"
+      filterEntriesByArea: function() {
+
+        app.areasList.forEach(function(element) {
+          if (element.name == app.area) {
+            app.city = element.cities
+          }
+        })
+
+        app.loadEntries()
         app.loadFacets()
 
       },
@@ -392,6 +450,20 @@
         app.loadEntries()
         app.loadFacets()
 
+      },
+
+      filterByFeature: function(value) {
+
+        // if the facet is already selected, unselect it
+        // console.log("filterByFeature", value, this.selectedFacets.indexOf(value))
+        i = this.selectedFacets.indexOf(value)
+        if (i > -1) {
+          this.selectedFacets.splice(i, 1)
+        } else {
+          this.selectedFacets.push(value)
+        }
+
+        app.loadEntries()
       },
 
       saveUserFilter: function() {
@@ -430,20 +502,6 @@
         } catch(error) {
           console.error(error)
         }
-      },
-
-      filterByFeature: function(value) {
-
-        // if the facet is already selected, unselect it
-        // console.log("filterByFeature", value, this.selectedFacets.indexOf(value))
-        i = this.selectedFacets.indexOf(value)
-        if (i > -1) {
-          this.selectedFacets.splice(i, 1)
-        } else {
-          this.selectedFacets.push(value)
-        }
-
-        this.loadEntries()
       },
 
       setDejaVu: function(item) {
@@ -541,7 +599,7 @@
         }
       },
 
-      displayArea: function(card) {
+      displayPropertySurface: function(card) {
         if (typeof(card.area)!=='undefined' && card.area!='') {
           return card.area + ' m2'
         }

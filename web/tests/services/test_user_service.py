@@ -6,7 +6,6 @@ import uuid
 from objects import User
 
 from services.user_service import UserService
-from objects import User
 
 from tests.data.base_data import ZONE
 

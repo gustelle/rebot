@@ -16,7 +16,7 @@ import ujson as json
 
 from main import app
 
-from tests.data import (products, catalogs, users)
+from tests.data import (products, catalogs, users, areas)
 from tests.data.base_data import ZONE
 
 import config
@@ -123,6 +123,14 @@ def dataset(monkeysession):
     for c_dict in users.VALID_USERS:
         db.child(FB_CI_ROOT + '/users').child(c_dict['id']).set(c_dict)
 
+
+    """
+    Areas
+    """
+    for c_dict in areas.VALID_AREAS:
+        db.child(FB_CI_ROOT + f"/areas/{ZONE}").child(c_dict['name']).set(c_dict)
+
+
     """
     Catalogs
     """
@@ -144,6 +152,10 @@ def dataset(monkeysession):
             'users': {
                 'valid': users.VALID_USERS,
                 'invalid': users.INVALID_USERS
+            },
+            'areas': {
+                'valid': areas.VALID_AREAS,
+                'invalid': areas.INVALID_AREAS
             },
             'catalogs': {
                 'valid': catalogs.VALID_CATALOGS,

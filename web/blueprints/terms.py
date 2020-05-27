@@ -32,6 +32,9 @@ async def get_terms(request, term: str, zone: str, q: str=None):
     """
     results = []
 
+    if not zone or not zone.strip():
+        raise InvalidUsage(f"zone must be set")
+
     if term not in ['city', 'features']:
         raise InvalidUsage(f"unsupported term {term}")
 

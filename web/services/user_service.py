@@ -30,13 +30,6 @@ class UserService(FirebaseService):
         super(UserService, self).__init__(tenant=_tenant)
 
 
-    def _to_array(self, value):
-        """convert a string to a list"""
-        if isinstance(value, str):
-            return [e.strip() for e in value.split(',')]
-        return value
-
-
     def get_user(self, id):
         """
         Retrieves a user by its id

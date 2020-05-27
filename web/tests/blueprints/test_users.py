@@ -17,6 +17,7 @@ from objects import User
 import config
 
 from tests.data.base_data import ZONE, NAME
+from tests.data.users import assert_user_equals
 
 
 async def test_get(test_cli, mocker, dataset):
@@ -76,8 +77,13 @@ async def test_put_deja_vu(test_cli, mocker, dataset, pyrebase_db, firebase_root
 
     user_test_dict = copy.deepcopy(dataset['users']['valid'])[1]
     djv = user_test_dict['deja_vu']
+
+    # djv is a dict
     for key, val in djv.items():
+        # val is an array
         djv[key].append("test")
+
+    print(f"djv: {djv}")
 
     # update only the field 'deja_vu'
     response = await test_cli.put(
@@ -95,8 +101,9 @@ async def test_put_deja_vu(test_cli, mocker, dataset, pyrebase_db, firebase_root
     jay = await response_get.json()
     user_fetched =  jay['result']
 
-    user_test_dict['deja_vu'] = djv
-    assert user_fetched == user_test_dict
+    user_test_dict["deja_vu"] = djv
+
+    assert_user_equals(user_test_dict, user_fetched)
 
     # reset data for the rest of the tests
     pyrebase_db.child(firebase_root_node + "/users").child(user_test_dict['id']).set(dataset['users']['valid'][1])
@@ -146,7 +153,7 @@ async def test_put_tbv(test_cli, mocker, dataset, pyrebase_db, firebase_root_nod
     user_fetched =  jay['result']
 
     user_test_dict['tbv'] = tbv
-    assert user_fetched == user_test_dict
+    assert_user_equals(user_test_dict, user_fetched)
 
     # reset data for the rest of the tests
     pyrebase_db.child(firebase_root_node + "/users").child(user_test_dict['id']).set(dataset['users']['valid'][1])
@@ -232,7 +239,7 @@ async def test_put_filter_include_deja_vu(test_cli, mocker, dataset, pyrebase_db
     jay = await response_get.json()
     user_fetched =  jay['result']
 
-    assert user_fetched == user_test_dict
+    assert_user_equals(user_test_dict, user_fetched)
 
     # reset data for the rest of the tests
     pyrebase_db.child(firebase_root_node + "/users").child(user_test_dict['id']).set(dataset['users']['valid'][1])
@@ -275,7 +282,7 @@ async def test_put_filter_city(test_cli, mocker, dataset, pyrebase_db, firebase_
     jay = await response_get.json()
     user_fetched =  jay['result']
 
-    assert user_fetched == user_test_dict
+    assert_user_equals(user_test_dict, user_fetched)
 
     # reset data for the rest of the tests
     pyrebase_db.child(firebase_root_node + "/users").child(user_test_dict['id']).set(dataset['users']['valid'][1])
@@ -319,7 +326,7 @@ async def test_put_max_price_negative(test_cli, mocker, dataset, pyrebase_db, fi
     user_fetched =  jay['result']
 
     user_test_dict['filter']['max_price'] = 0.0
-    assert user_fetched == user_test_dict
+    assert_user_equals(user_test_dict, user_fetched)
 
     # reset data for the rest of the tests
     pyrebase_db.child(firebase_root_node + "/users").child(user_test_dict['id']).set(dataset['users']['valid'][1])
@@ -346,7 +353,7 @@ async def test_put_max_price(test_cli, mocker, dataset, pyrebase_db, firebase_ro
     jay = await response_get.json()
     user_fetched =  jay['result']
 
-    assert user_fetched == user_test_dict
+    assert_user_equals(user_test_dict, user_fetched)
 
     # reset data for the rest of the tests
     pyrebase_db.child(firebase_root_node + "/users").child(user_test_dict['id']).set(dataset['users']['valid'][1])
@@ -374,7 +381,7 @@ async def test_put_create_user(test_cli, mocker, dataset):
     user_fetched =  jay['result']
 
     user_test_dict['id'] = unique_id  #.replace("-", "")
-    assert user_fetched == user_test_dict
+    assert_user_equals(user_test_dict, user_fetched)
 
 
 async def test_put_cleanup_user(test_cli, mocker, dataset):

@@ -248,3 +248,55 @@ class User(DictionaryObject):
         the string representation of the class instance
         """
         return f"User <id: '{self.id}'>"
+
+
+class Area(DictionaryObject):
+    """
+    Busines object representing a group of cities
+    """
+
+
+    def __init__(self, name, cities):
+        """Comma separated list of values are converted to arrays"""
+
+        self.name = str(name)
+
+        if cities and isinstance(cities, str):
+            self.cities = [e.strip() for e in cities.split(',')]
+        elif utils.is_list(cities):
+            self.cities = cities
+
+
+    @classmethod
+    def from_dict(cls, dictionary):
+        """
+        convenience method to load an object with a dictionary
+        """
+        if not dictionary or not isinstance(dictionary, dict):
+            raise ValueError('Unable to initialize object')
+
+        if dictionary.get('name') is None or not dictionary.get('name'):
+            raise ValueError('Unable to initialize object')
+
+        obj = cls(
+            dictionary.get('name'),
+            dictionary.get('cities', []),
+        )
+
+        return obj
+
+
+    def to_dict(self):
+        """Overrides the parent method to convert arrays to comma separated values"""
+
+        return {
+            'name': self.name,
+            'cities': self.cities,
+        }
+
+
+    def __repr__(self):
+        """
+        the string representation of the class instance
+        """
+        return f"CityArea <name: '{self.name}'>"

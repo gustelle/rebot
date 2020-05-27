@@ -45,6 +45,13 @@ class FirebaseService():
         return utils.safe_text(text)
 
 
+    def _to_array(self, value):
+        """convert a string to a list"""
+        if isinstance(value, str):
+            return [e.strip() for e in value.split(',')]
+        return value
+
+
     @cachedmethod(operator.attrgetter('_cache'), lock=operator.attrgetter('_lock'))
     def _get_from_cache(self, entry_key):
         # with self._lock:

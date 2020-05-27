@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import uuid
+
+from .base_data import NAME
+
 VALID_PRODUCTS = [
 {
     "url": "http://www.glv-immobilier.fr/detail/2664-vente-maison-3-pieces-houplines-9502md/",
@@ -13,7 +17,7 @@ VALID_PRODUCTS = [
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_3.jpg",
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_4.jpg"
     ],
-    "sku": "9502MD",
+    "sku": str(uuid.uuid4()),
     "price": 95000.0,
     "features": ["garage", "jardin"]
     # "catalog": "glv"
@@ -30,7 +34,7 @@ VALID_PRODUCTS = [
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_3.jpg",
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_4.jpg"
     ],
-    "sku": "9502MD_2",
+    "sku": str(uuid.uuid4()),
     "price": 300000.0,
     "features": ["garage", "jardin"]
     # "catalog": "glv"
@@ -47,7 +51,7 @@ VALID_PRODUCTS = [
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_3.jpg",
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_4.jpg"
     ],
-    "sku": "9502MD_3",
+    "sku": str(uuid.uuid4()),
     "price": 300000.0,
     "features": ["garage", "jardin"]
     # "catalog": "glv"
@@ -64,7 +68,7 @@ VALID_PRODUCTS = [
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_3.jpg",
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_4.jpg"
     ],
-    "sku": "9502MD_4",
+    "sku": str(uuid.uuid4()),
     "price": 290000.0,
     "features": ["garage", "jardin"]
     # "catalog": "glv"
@@ -81,7 +85,7 @@ VALID_PRODUCTS = [
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_3.jpg",
       "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_4.jpg"
     ],
-    "sku": "9502MD_5",
+    "sku": str(uuid.uuid4()),
     "price": 280000.0,
     "features": ["garage", "jardin"]
     # "catalog": "glv"
@@ -89,7 +93,7 @@ VALID_PRODUCTS = [
 {
     "url": "http://www.newdealimmobilier.fr/bien/5661-duplex-lille",
     "title": "APPARTEMENT DUPLEX DE CHARME PROCHE LILLE CENTRE",
-    "sku": "AH2828D",
+    "sku": str(uuid.uuid4()),
     "media": [
       "http://www.newdealimmobilier.fr/media/cache/ad_main/ad/3269638-annonces-5661-88916.jpg",
       "http://www.newdealimmobilier.fr/media/cache/ad_main/ad/3269638-annonces-5661-88916.jpg"
@@ -103,12 +107,36 @@ VALID_PRODUCTS = [
 {
     "url": "http://",
     "title": "New Real Estate Property",
-    "sku": "1234",
+    "sku": str(uuid.uuid4()),
     "media": [
       "http://",
     ],
     "city": "anstaing",
     "price": 284000.0,
+    "description": "",
+    "features": ["garage", "jardin"]
+},
+{
+    "url": "http://",
+    "title": "New Real Estate Property 2",
+    "sku": str(uuid.uuid4()),
+    "media": [
+      "http://",
+    ],
+    "city": "tressin",
+    "price": 285000.0,
+    "description": "",
+    "features": ["garage", "jardin"]
+},
+{
+    "url": "http://",
+    "title": "New Real Estate Property 3",
+    "sku": str(uuid.uuid4()),
+    "media": [
+      "http://",
+    ],
+    "city": "chereng",
+    "price": 286000.0,
     "description": "",
     "features": ["garage", "jardin"]
 }
@@ -129,3 +157,9 @@ INVALID_PRODUCTS = [
     # "catalog": "ndi",
 }
 ]
+
+
+def get_product_id(product):
+    if product is None or not isinstance(product, dict) or "sku" not in product:
+        raise ValueError()
+    return f"{NAME}_{product['sku']}"
