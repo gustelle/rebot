@@ -136,7 +136,21 @@
                 <div class="col-auto mb-3" v-for="card in items" :key="card.sku">
                     <div class="card" style="width: 18rem;">
                         <b-link :href="card.url" target="_blank">
-                          <b-img thumbnail center :src="card.media[0]" :alt="card.title"></b-img>
+
+                          <b-carousel
+                            id="carousel-1"
+                            :interval="0"
+                            controls
+                            fade
+                            indicators>
+                            <!-- Text slides with image -->
+                            <b-carousel-slide v-for="slide in card.media"
+                              v-bind:img-src="slide"
+                              v-bind:img-alt="card.title"
+                            ></b-carousel-slide>
+
+                          </b-carousel>
+
                         </b-link>
                         <div class="card-body">
                           <h5 class="card-title"><b-link :href="card.url" target="_blank">[[card.title]]</b-link></h5>
