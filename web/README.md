@@ -67,6 +67,22 @@ You need a real time database in firebase to use this app :
 | SENTRY_URL | Your project URL to push messages in sentry |
 | ENVIRONMENT | Tag used in sentry to facilitate the triage of the incoming messagesM. For instance 'dev', 'QA' or 'prod'  |
 
+### Settings related to Authentication
+
+Users can authenticate into the app, thus their filters can be saved in Firebase
+
+| Variable| Meaning | Default
+| ---- | --- | ---
+| GOOGLE_CLIENT_ID | provided by your google console |
+| GOOGLE_CLIENT_SECRET | provided by your google console |
+
+In addition, you'll see 2 important settings in `config.py`:
+
+```
+OAUTH_REDIRECT_URI = 'http://localhost:7000/login/oauth'  # define it in google api console too
+REDIRECT_AFTER_AUTH = 'http://localhost:7000/welcome'  
+```
+
 ## Required Data
 
 The app requires some data to run, the data are to be stored in Firebase:

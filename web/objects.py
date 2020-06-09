@@ -68,8 +68,11 @@ class Catalog(DictionaryObject):
 
         Missing values for lang, zone and long_name are replaced with ''
         """
+        if not dictionary or not isinstance(dictionary, dict):
+            raise ValueError(f"Unable to initialize Catalog, expecting dictionnary, passed {type(dictionary)}")
+
         if dictionary.get('short_name') is None or not dictionary.get('short_name'):
-            raise ValueError('Unable to initialize object')
+            raise ValueError(f"Unable to initialize Catalog, expecting a shortname")
 
         return cls(
             dictionary.get('short_name'),
@@ -90,8 +93,8 @@ class UserFilter:
 
     def __init__(self, dictionary):
         """None value is OK"""
-        if dictionary and not isinstance(dictionary, dict):
-            raise ValueError('Unable to initialize object')
+        if not isinstance(dictionary, dict):
+            raise ValueError(f"Unable to initialize UserFilter, expecting dictionnary, passed {type(dictionary)}")
 
         # converting a string to bool is tricky
         # for example bool("false") == True
@@ -206,15 +209,13 @@ class User(DictionaryObject):
     @classmethod
     def from_dict(cls, dictionary):
         """
-        convenience method to load an object with a dictionary
-
-        Missing values for lang, zone and long_name are replaced with ''
+        Load a User object with a dictionary
         """
-        if not dictionary or not isinstance(dictionary, dict):
-            raise ValueError('Unable to initialize object')
+        if not isinstance(dictionary, dict):
+            raise ValueError(f"Unable to initialize User, expecting dictionnary, passed {type(dictionary)}")
 
         if dictionary.get('id') is None or not dictionary.get('id'):
-            raise ValueError('Unable to initialize object')
+            raise ValueError(f"Unable to initialize User, expecting an id")
 
         obj = cls(
             dictionary.get('id'),
@@ -225,8 +226,20 @@ class User(DictionaryObject):
         obj.deja_vu = dictionary.get('deja_vu', {})
         obj.tbv = dictionary.get('tbv', {})
 
-        return obj
+        # fields may be interpreted as strings when values are single
+        # be careful to return arrays
+        if obj.tbv:
+            for zone, value in obj.tbv.items():
+                obj.tbv[zone] = utils.to_list(value)
 
+        if obj.deja_vu:
+            for zone, value in obj.deja_vu.items():
+                obj.deja_vu[zone] = utils.to_list(value)
+
+        if obj.filter and obj.filter.city:
+            obj.filter.city = utils.to_list(obj.filter.city)
+
+        return obj
 
 
     def to_dict(self):
@@ -240,7 +253,6 @@ class User(DictionaryObject):
             'tbv': self.tbv,
             'filter': self.filter.to_dict()
         }
-
 
 
     def __repr__(self):
@@ -272,11 +284,11 @@ class Area(DictionaryObject):
         """
         convenience method to load an object with a dictionary
         """
-        if not dictionary or not isinstance(dictionary, dict):
-            raise ValueError('Unable to initialize object')
+        if not isinstance(dictionary, dict):
+            raise ValueError(f"Unable to initialize Area, expecting dictionnary, passed {type(dictionary)}")
 
         if dictionary.get('name') is None or not dictionary.get('name'):
-            raise ValueError('Unable to initialize object')
+            raise ValueError('Unable to initialize Area, expecting a name')
 
         obj = cls(
             dictionary.get('name'),

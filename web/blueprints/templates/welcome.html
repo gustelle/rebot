@@ -1,0 +1,75 @@
+
+{% extends "layout.html" %}
+
+{% set active_page = "welcome" %}
+
+{% block content %}
+
+<b-container fluid="xl">
+
+  <b-jumbotron>
+    <template v-slot:header>{{ gettext('welcome_header', request=request) }}</template>
+
+    <template v-slot:lead>
+      {{ gettext('welcome_lead_text', request=request) }}
+    </template>
+
+    <hr class="my-4">
+
+    <p>
+      {{ gettext('welcome_paragraph', request=request) }}
+    </p>
+
+    <b-button variant="primary" href="http://localhost:7000/login">{{ gettext('cta_login', request=request) }}</b-button>
+    <b-button variant="success" href="http://localhost:7000/products/list">{{ gettext('cta_list_products', request=request) }}</b-button>
+  </b-jumbotron>
+
+  <b-row>
+    <b-col>
+      <b-form-group horizontal label="{{ gettext('label_cities_list', request=request) }}">
+        <b-input-group>
+          <multiselect
+            placeholder="{{ gettext('placeholder_list_of_cities', request=request) }}"
+            ></multiselect>
+        </b-input-group>
+      </b-form-group>
+    </b-col>
+
+    <b-col>
+      <b-form-group horizontal label="{{ gettext('label_max_price', request=request) }}">
+        <b-input-group>
+          <b-form-input placeholder="{{ gettext('placeholder_max_price', request=request) }}"></b-form-input>
+        </b-input-group>
+      </b-form-group>
+    </b-col>
+
+    <b-col>
+      <b-form-group horizontal label="{{ gettext('label_max_price', request=request) }}">
+        <b-button variant="primary" href="http://localhost:7000/login">{{ gettext('cta_search', request=request) }}</b-button>
+      </b-form-group>
+    </b-col>
+  </b-row>
+
+  <b-row>
+    <b-col>
+      <b-row>
+        Highlights
+      <b-row>
+    </b-col>
+  </b-row>
+
+</b-container>
+
+{% endblock %}
+
+{% block footer %}
+
+<script type="text/javascript">
+
+  var app = new Vue({
+    el: '#app',
+  })
+
+</script>
+
+{% endblock %}

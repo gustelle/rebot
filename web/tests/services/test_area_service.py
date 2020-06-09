@@ -66,9 +66,6 @@ async def test_get_areas(test_cli, mocker, dataset):
     a_service = AreaService(ZONE)
     all_areas = a_service.get_areas()
 
-    # print([a.to_dict() for a in all_areas])
-    # print("---------------------------")
-    # print(ds)
 
     assert all(isinstance(p, Area) for p in all_areas)
     assert all(item.to_dict() in ds for item in all_areas)

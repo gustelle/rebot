@@ -15,6 +15,7 @@ from jobs.user_tasks import do_cleanup
 from objects import User
 
 from tests.data.base_data import ZONE
+from tests.data.products import get_product_id
 
 
 async def test_do_cleanup_no_zone():
@@ -51,7 +52,7 @@ async def test_do_cleanup_with_orphans(mocker, dataset, pyrebase_db, firebase_ro
 
     # simulate orphans on both deja_vu and tbv
     # insert non existing ids in user info in firebase
-    orphan = str(uuid.uuid4())
+    orphan = get_product_id({'sku': str(uuid.uuid4())})
     ds['deja_vu'][ZONE].append(orphan)
     ds['tbv'][ZONE].append(orphan)
     pyrebase_db.child(firebase_root_node + "/users").child(ds['id']).set(ds)
@@ -67,6 +68,9 @@ async def test_do_cleanup_with_orphans(mocker, dataset, pyrebase_db, firebase_ro
     assert orphan not in args[0].deja_vu.get(ZONE)
     assert orphan not in args[0].tbv.get(ZONE)
 
+    # tear down
+    pyrebase_db.child(firebase_root_node + "/users").child(ds['id']).set(dataset['users']['valid'][1])
+
 
 async def test_do_cleanup_elastic_exception(mocker, dataset, pyrebase_db, firebase_root_node):
     """the user deja_vu and tbv remain unchanged"""
@@ -75,7 +79,7 @@ async def test_do_cleanup_elastic_exception(mocker, dataset, pyrebase_db, fireba
 
     # simulate orphans on both deja_vu and tbv
     # insert non existing ids in user info in firebase
-    orphan = str(uuid.uuid4())
+    orphan = get_product_id({'sku': str(uuid.uuid4())})
     ds['deja_vu'][ZONE].append(orphan)
     ds['tbv'][ZONE].append(orphan)
     pyrebase_db.child(firebase_root_node + "/users").child(ds['id']).set(ds)
@@ -93,3 +97,6 @@ async def test_do_cleanup_elastic_exception(mocker, dataset, pyrebase_db, fireba
     assert ret_val == {'deja_vu': [], 'tbv': []}
     assert orphan in args[0].deja_vu.get(ZONE)
     assert orphan in args[0].tbv.get(ZONE)
+
+    # tear down
+    pyrebase_db.child(firebase_root_node + "/users").child(ds['id']).set(dataset['users']['valid'][1])

@@ -15,15 +15,16 @@ from sanic import response
 from sanic.exceptions import abort, ServerError, InvalidUsage
 
 from sanicargs import parse_query_args, fields
-
 from sanic_babel import gettext
 
+from objects import User
 from services.user_service import UserService
 from services.data.data_meta import CatalogMeta
 from services.data.data_provider import ProductService
 from services.exceptions import ServiceError
 
 from . import products_blueprint
+from .login import login_required, inject_user_info
 
 import config
 import utils
@@ -106,23 +107,21 @@ async def list_products(
 
     :param zone: the geographical zone, must be a non-blank string
     :param page: current page of results
-    :param user_id: id of the current user. The following user preferences are considered to render the results : 'deja_vu', 'tbv' and 'include_deja_vu'
+    :param user_id: optional id of the current user. The following user preferences are considered to render the results : 'deja_vu', 'tbv' and 'include_deja_vu'
     :param feature: an optional list of comma separated features
     :param city: comma separated list of cities to filter results (user prefs are not considered). When void, we consider the cities should not be considered as a filter
     :param max_price: float. When set to O, we consider the price should not be considered as a filter
     :param catalog: optional, the real estate agency on which the real estate property has been scraped. Ignored when void
     """
+
     if not zone.strip():
         raise InvalidUsage(f"zone must be set")
 
-    if not user_id:
-        raise InvalidUsage(f"Inalid User")
-
     # fetch user to check if it exists !!
-    u_service = UserService()
-    user = u_service.get_user(user_id)
-    if not user:
-        raise InvalidUsage(f"Inalid User")
+    user = None
+    if user_id:
+        u_service = UserService()
+        user = u_service.get_user(user_id)
 
     # to avoid errors during querying remove all blank items
     if feature:
@@ -132,41 +131,35 @@ async def list_products(
     # override user max_price
     # if not set, we consider that it's intentional and means that the max_price is 0 (no max_price)
     if not max_price or not max_price.strip():
-        user.filter.max_price = 0.0
+        max_price = 0.0
     else:
-        user.filter.max_price = float(max_price)
-
-    # override user city
-    # if not set, we consider that the city should not be considered
-    if not city:
-        user.filter.city = None
-    else:
-        user.filter.city = [urllib.parse.unquote(item.strip()) for item in city if item.strip()]
+        max_price = float(str(max_price))
 
     if not catalog.strip():
         catalog = None
 
-    ##################################################
-    # filter based on user prefs
-    exclude_items = None
+        ##################################################
+        # filter based on user prefs
+        exclude_items = None
 
     try:
-        if not user.filter.include_deja_vu:
+        exclude_items = None
+        if user and not user.filter.include_deja_vu:
             exclude_items = user.deja_vu.get(zone)
 
         # query entries
         service = ProductService(zone)
         entries = service.find(
             page=page,
-            city=user.filter.city,
-            max_price=user.filter.max_price,
+            city=city,
+            max_price=max_price,
             exclude=exclude_items,
             feature=feature,
             catalog=catalog
         )
         count = service.count(
-            city=user.filter.city,
-            max_price=user.filter.max_price,
+            city=city,
+            max_price=max_price,
             exclude=exclude_items,
             feature=feature,
             catalog=catalog
@@ -181,9 +174,9 @@ async def list_products(
         ##################################################
         # Mark products as deja_vu or TBV
         for x in results:
-            if user.tbv and x in user.tbv.get(zone):
+            if user and user.tbv and x in user.tbv.get(zone):
                 x['tbv']=True
-            if user.deja_vu and x in user.deja_vu.get(zone) and user.filter.include_deja_vu:
+            if user and user.deja_vu and x in user.deja_vu.get(zone) and user.filter.include_deja_vu:
                 x['deja_vu']=True
 
 
@@ -261,26 +254,20 @@ async def list_products(
 
 
 @products_blueprint.route('/list')
-@parse_query_args
-async def render_products_list(request, zone: str='', user_id: str=''):
+@inject_user_info
+# @parse_query_args  # doesn't seem to be compatible with @inject_user_info (arg user_info is injected)
+async def render_products_list(request, user: User):
     """
     This route renders a list of real estate properties
+
+    :param user: injected, set to None if user is not authenticated
     """
 
-    if not zone or zone.strip()=='':
-        zone = config.ENV.DEFAULT_ZONE
-        LOGGER.info(f"Using Default zone: {zone}")
-
-    # fetch user to check if it exists !!
-    u_service = UserService()
-    user = u_service.get_user(user_id)
-    if not user:
-        raise InvalidUsage(f"Inalid User")
+    zone = request.args.get("zone") or config.ENV.DEFAULT_ZONE
 
     return await utils.render_template(
         "entries.html",
         request=request,
-        title=gettext('nlp_products_table_title', request),
         zone=zone,
-        user=user.to_dict()
+        user=user
     )

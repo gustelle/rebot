@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import uuid
+import random
 
 from .base_data import NAME
 
@@ -159,7 +160,13 @@ INVALID_PRODUCTS = [
 ]
 
 
-def get_product_id(product):
-    if product is None or not isinstance(product, dict) or "sku" not in product:
+def get_product_id(product_dict):
+    if product_dict is None or not isinstance(product_dict, dict) or "sku" not in product_dict:
         raise ValueError()
-    return f"{NAME}_{product['sku']}"
+    return f"{NAME}_{product_dict['sku']}"
+
+
+def random_product():
+    p_length = len(VALID_PRODUCTS)
+    product_index = random.randint(0, p_length-1)
+    return VALID_PRODUCTS[product_index]

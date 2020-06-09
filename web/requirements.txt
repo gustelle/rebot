@@ -29,3 +29,7 @@ elasticsearch-dsl
 
 # firebase driver
 pyrebase
+
+# oauth
+sanic_oauth
+sanic-session[aioredis]

@@ -1,4 +1,5 @@
 import os, errno
+import asyncio
 import sys
 import shutil
 import fnmatch
@@ -24,9 +25,18 @@ import config
 
 FB_CI_ROOT = 'real-estate-ci'
 
+async def mock_coro(mock=None):
+    return mock
+
 
 @pytest.fixture
-def test_cli(loop, sanic_client):
+def test_cli(loop, sanic_client, mocker):
+    # patch redis used to manage user session
+    m = mocker.patch('aioredis.create_redis_pool')
+    m.return_value=mock_coro()
+
+    mocker.patch('_sanic_session.AIORedisSessionInterface')
+
     return loop.run_until_complete(sanic_client(app))
 
 
@@ -77,7 +87,6 @@ def dataset(monkeysession):
 
     try:
         elastic_client.indices.create(index=catalogs_test_index)
-        print(f"Created Index '{catalogs_test_index}' in {host}")
     except ElasticsearchException as e:
         print(f"Index init for {catalogs_test_index} error: {e}")
 

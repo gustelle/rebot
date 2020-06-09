@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-05-27 11:03+0200\n"
+"POT-Creation-Date: 2020-06-02 15:28+0200\n"
 "PO-Revision-Date: 2020-05-15 16:14+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -66,6 +66,10 @@ msgstr "Properties found"
 
 msgid "item_is_new"
 msgstr "New item"
+
+# #################### CTA
+msgid "cta_login"
+msgstr "Login with Google"
 
 #~ msgid "placeholder_select_list"
 #~ msgstr "Select an area:"

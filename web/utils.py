@@ -55,6 +55,13 @@ def is_list(obj):
     return False
 
 
+def to_list(value):
+    """convert a string to a list"""
+    if isinstance(value, str):
+        return [e.strip() for e in value.split(',')]
+    return value
+
+
 async def render_template(template_file, **args):
     """
     simulate the flask render_template

@@ -5,7 +5,6 @@
 
 {% block content %}
 
-
 <b-container fluid="xl">
   <b-row>
 
@@ -14,7 +13,7 @@
         <b-col lg="8">
           <b-row>
             <b-col>
-              <b-form-group horizontal label="{{ gettext('label_areas_list', request) }}">
+              <b-form-group horizontal label="{{ gettext('label_areas_list', request=request) }}">
                 <b-input-group>
                     <b-form-select
                       v-model="area"
@@ -23,7 +22,7 @@
                       value-field="name"
                       @change="filterEntriesByArea">
                       <template v-slot:first>
-                        <b-form-select-option :value="null" disabled>{{ gettext('placeholder_select_area', request) }}</b-form-select-option>
+                        <b-form-select-option :value="null" disabled>{{ gettext('placeholder_select_area', request=request) }}</b-form-select-option>
                       </template>
                     </b-form-select>
                 </b-input-group>
@@ -32,10 +31,10 @@
           </b-row>
           <b-row>
             <b-col>
-              <b-form-group horizontal label="{{ gettext('label_cities_list', request) }}">
+              <b-form-group horizontal label="{{ gettext('label_cities_list', request=request) }}">
                 <b-input-group>
                   <multiselect
-                    placeholder="{{ gettext('placeholder_list_of_cities', request) }}"
+                    placeholder="{{ gettext('placeholder_list_of_cities', request=request) }}"
                     v-model="city"
                     :options="citiesList"
                     :multiple="true"
@@ -58,31 +57,33 @@
           </b-row>
           <b-row>
             <b-col>
-              <b-form-group horizontal label="{{ gettext('label_max_price', request) }}">
+              <b-form-group horizontal label="{{ gettext('label_max_price', request=request) }}">
                 <b-input-group>
-                  <b-form-input v-model="max_price" placeholder="{{ gettext('placeholder_max_price', request) }}" @input="filterEntries"></b-form-input>
+                  <b-form-input v-model="max_price" placeholder="{{ gettext('placeholder_max_price', request=request) }}" @input="filterEntries"></b-form-input>
                 </b-input-group>
               </b-form-group>
             </b-col>
           </b-row>
+          {% if user %}
           <b-row>
             <b-col>
-              <b-form-group horizontal label="{{ gettext('label_show_deja_vu', request) }}">
+              <b-form-group horizontal label="{{ gettext('label_show_deja_vu', request=request) }}">
                 <b-input-group>
                   <b-form-checkbox v-model="show_deja_vu" switch @input="filterEntries"></b-form-checkbox>
                 </b-input-group>
               </b-form-group>
             </b-col>
           </b-row>
+          {% endif %}
         </b-col>
       </b-row>
-
+      {% if user %}
       <b-row>
         <b-col>
-          <b-button @click="saveUserFilter">{{ gettext('save_my_search', request) }}</b-button>
+          <b-button @click="saveUserFilter">{{ gettext('save_my_search', request=request) }}</b-button>
         </b-col>
       </b-row>
-
+      {% endif %}
       <b-row>
         <b-col>
           <b-button class="facet" v-for="facet in facets" @click="filterByFeature(facet)" :variant="facetVariant(facet)">[[ facet ]]</b-button>
@@ -124,7 +125,7 @@
 
   <b-row>
     <b-col>
-      <p><em>[[itemsCount]]</em> {{ gettext('items_found', request) }}</p>
+      <p><em>[[itemsCount]]</em> {{ gettext('items_found', request=request) }}</p>
     </b-col>
   </b-row>
 
@@ -143,7 +144,6 @@
                             controls
                             fade
                             indicators>
-                            <!-- Text slides with image -->
                             <b-carousel-slide v-for="slide in card.media"
                               v-bind:img-src="slide"
                               v-bind:img-alt="card.title"
@@ -168,13 +168,13 @@
                             <b-form-checkbox
                               v-model="card.deja_vu"
                               @change="setDejaVu(card)">
-                              {{ gettext('item_deja_vu', request) }}
+                              {{ gettext('item_deja_vu', request=request) }}
                             </b-form-checkbox>
                           </p>
                           <p class="card-text">
                             <button type="button" class="btn btn-default btn-sm" v-on:click="setTBV(card)">
                               <i class="fa-fw" v-bind:class="{'far fa-star': !card.tbv, 'fas fa-star': card.tbv}"></i>
-                              {{ gettext('item_to_be_visited', request) }}
+                              {{ gettext('item_to_be_visited', request=request) }}
                             </button>
                           </p>
                           <p class="card-text">
@@ -185,7 +185,7 @@
                           </p>
                         </div>
                         <div v-if="card.is_new" class="card-footer bg-warning">
-                          {{ gettext('item_is_new', request) }}
+                          {{ gettext('item_is_new', request=request) }}
                         </div>
                         <div class="card-footer">
                           <i class="fas fa-id-card fa-fw"></i>[[card.sku]]
@@ -206,8 +206,6 @@
       </b-col>
   </b-row>
 </b-container>
-
-
 
 {% endblock %}
 
@@ -243,9 +241,9 @@
       message: '',
       notifierVariant : 'info',
       zone: {% if zone %}'{{ zone }}'{% else %}''{% endif %},
-      user_id: '{{ user.get("id") }}',
-      user_deja_vu: {% if user.get('deja_vu') and user.get('deja_vu').get(zone) %}{{ user.get('deja_vu').get(zone)|tojson }}{% else %}[]{% endif %}, // the list of user deja_vu
-      user_tbv: {% if user.get('tbv') and user.get('tbv').get(zone) %}{{ user.get('tbv').get(zone)|tojson }}{% else %}[]{% endif %}          // the list of user tbv
+      user_id: {% if user %}'{{ user.id }}'{% else %}''{% endif %},
+      user_deja_vu: {% if user and user.deja_vu and user.deja_vu.get(zone) %}{{ user.deja_vu.get(zone)|tojson }}{% else %}[]{% endif %}, // the list of user deja_vu
+      user_tbv: {% if user and user.tbv and user.tbv.get(zone) %}{{ user.tbv.get(zone)|tojson }}{% else %}[]{% endif %}          // the list of user tbv
     },
     mounted: function() {
       this.loadAreas()
@@ -255,49 +253,50 @@
 
       loadUserEntries: function() {
 
-        var that = this
+        // fetch user filters if user is authenticated
+        if (this.user_id!='') {
+          var that = this
+          // load user prefs
+          axios.get(`/users/${that.user_id}`)
+            .then(function (response) {
 
-        // load user prefs
-        axios.get(`/users/${that.user_id}`)
-          .then(function (response) {
+              filter = response.data.result.filter
+              if (filter && typeof(filter.city)!=='undefined' && filter.city.length > 0) {
+                // filter.city can be either a list of elements
+                that.city = filter.city.filter(item => item.trim()!=='');
 
-            filter = response.data.result.filter
-            if (filter && typeof(filter.city)!=='undefined' && filter.city.length > 0) {
-              // filter.city can be either a list of elements
-              app.city = filter.city.filter(item => item.trim()!=='');
+              }
+              if (filter && typeof(filter.max_price)!=='undefined' && filter.max_price !== '') {
+                that.max_price = filter.max_price
+              }
+              if (filter && typeof(filter.include_deja_vu)!=='undefined') {
+                that.show_deja_vu = Boolean(filter.include_deja_vu)
+              }
 
-            }
-            if (filter && typeof(filter.max_price)!=='undefined' && filter.max_price !== '') {
-              app.max_price = filter.max_price
-            }
-            if (filter && typeof(filter.include_deja_vu)!=='undefined') {
-              app.show_deja_vu = Boolean(filter.include_deja_vu)
-            }
+              that.filterEntries()
 
-            //now load entries
-            app.loadEntries()
+            })
+            .catch(function (error) {
+              console.error(error);
+              that.message = "{{ gettext('unexpected_error', request=request) }}"
+              that.notifierVariant = "warning"
+            })
 
-            // load facets
-            app.loadFacets()
-
-          })
-          .catch(function (error) {
-            console.error(error);
-            app.message = "{{ gettext('unexpected_error', request) }}"
-            app.notifierVariant = "warning"
-          })
+        } else {
+          this.filterEntries()
+        }
       },
 
       loadEntries : function() {
 
         var that = this
         that.notifierVariant = 'info'
-        that.message = "{{ gettext('loading_entries', request) }}"
+        that.message = "{{ gettext('loading_entries', request=request) }}"
         that.isLoading = true
 
         // override possible user filters
-        let cities_ = app.city.join(',')
-        let max_price_ = app.max_price
+        let cities_ = that.city.join(',')
+        let max_price_ = that.max_price
 
         let route = `/products?zone=${that.zone}&page=${that.currentPage}&user_id=${that.user_id}&feature=${that.selectedFacets}&city=${cities_}&max_price=${max_price_}&catalog=${that.catalog}`
 
@@ -343,27 +342,27 @@
 
               // the keyword 'this' refers to what's inside axios.get()
               // so this.items and this.count has no sense here
-              app.items = _
-              app.itemsCount = response.data.count
-              app.currentPage = response.data.current_page
-              app.pagesCount = response.data.pages
+              that.items = _
+              that.itemsCount = response.data.count
+              that.currentPage = response.data.current_page
+              that.pagesCount = response.data.pages
 
-              app.message = ''
-              app.isLoading = false
+              that.message = ''
+              that.isLoading = false
 
               // remove the loading overlay
               // loader.hide()
 
             } else {
-              app.message = "{{gettext('no_entries_found', request)}}"
-              app.notifierVariant = 'warning'
-              app.isLoading = false
+              that.message = "{{gettext('no_entries_found', request=request)}}"
+              that.notifierVariant = 'warning'
+              that.isLoading = false
 
               // RAZ of the fields
               // in case the data have been populated before
-              app.items = []
-              app.currentPage = 1
-              app.pagesCount = 1
+              that.items = []
+              that.currentPage = 1
+              that.pagesCount = 1
 
               // remove the loading overlay
               // loader.hide()
@@ -373,9 +372,9 @@
           })
           .catch(function (error) {
             console.error(error);
-            app.message = "{{ gettext('unexpected_error', request) }}"
-            app.notifierVariant = "warning"
-            app.isLoading = false
+            that.message = "{{ gettext('unexpected_error', request=request) }}"
+            that.notifierVariant = "warning"
+            that.isLoading = false
           })
 
       },
@@ -383,24 +382,24 @@
       loadFacets : function() {
 
         let route = `/terms/features?zone=${this.zone}`
-
+        let that = this
         axios.get(route)
           .then(function (response) {
 
-            app.facets =[]
+            that.facets =[]
             entries = response.data.results
             if (entries.length>0) {
               entries.forEach(function(element) {
                 // console.log("populate facet", element)
-                app.facets.push(element)
+                that.facets.push(element)
               })
             }
 
           })
           .catch(function (error) {
             console.error(error);
-            app.message = "{{ gettext('unexpected_error', request) }}"
-            app.notifierVariant = "warning"
+            that.message = "{{ gettext('unexpected_error', request=request) }}"
+            that.notifierVariant = "warning"
           })
 
       },
@@ -408,6 +407,7 @@
       loadAreas : function() {
 
         let route = `/areas?zone=${this.zone}`
+        let that = this
         axios.get(route)
           .then(function (response) {
 
@@ -415,54 +415,50 @@
             if (entries.length>0) {
               entries.forEach(function(element) {
                 // console.log("populate facet", element)
-                app.areasList.push(element)
+                that.areasList.push(element)
               })
             }
 
           })
           .catch(function (error) {
             console.error(error);
-            app.message = "{{ gettext('unexpected_error', request) }}"
-            app.notifierVariant = "warning"
+            that.message = "{{ gettext('unexpected_error', request=request) }}"
+            that.notifierVariant = "warning"
           })
 
       },
 
       filterEntries: function() {
 
-        app.loadEntries()
-        app.loadFacets()
+        this.loadEntries()
+        this.loadFacets()
 
       },
 
       // area here is the concept of grouping cities
       // it has nothing to do with the area attribute of a real estate property which corresponds to the "surface"
       filterEntriesByArea: function() {
-
-        app.areasList.forEach(function(element) {
-          if (element.name == app.area) {
-            app.city = element.cities
+        let that = this
+        this.areasList.forEach(function(element) {
+          if (element.name == that.area) {
+            that.city = element.cities
           }
         })
-
-        app.loadEntries()
-        app.loadFacets()
+        this.filterEntries()
 
       },
 
       filterByCatalog: function(cat) {
 
-        app.catalog = cat
-        app.loadEntries()
-        app.loadFacets()
+        this.catalog = cat
+        this.filterEntries()
 
       },
 
       filterByCity: function(city) {
 
-        app.city = [city]
-        app.loadEntries()
-        app.loadFacets()
+        this.city = [city]
+        this.filterEntries()
 
       },
 
@@ -477,13 +473,14 @@
           this.selectedFacets.push(value)
         }
 
-        app.loadEntries()
+        this.loadEntries()
       },
 
       saveUserFilter: function() {
 
         var that = this
 
+        // pass partial=true to indicate that only the filter should be updated
         axios.post(`/users/${that.user_id}?zone=${that.zone}`, {
           'filter': {
             'max_price': parseInt(that.max_price) || -1,
@@ -493,15 +490,15 @@
         })
         .then(function (response) {
           //app.message = response.data.message
-          app.notifierVariant = 'success'
-          app.message = "{{ gettext('filter_save_success', request) }}"
+          that.notifierVariant = 'success'
+          that.message = "{{ gettext('filter_save_success', request=request) }}"
           // load entries with the new user preferences
           // app.loadUserEntries()
         })
         .catch(function (error) {
           console.log(error)
-          app.message = "{{ gettext('unexpected_error', request) }}"
-          app.notifierVariant = "warning"
+          that.message = "{{ gettext('unexpected_error', request=request) }}"
+          that.notifierVariant = "warning"
         })
 
       },
@@ -537,20 +534,20 @@
 
         axios.post(`/users/${that.user_id}?zone=${that.zone}`, body )
         .then(function (response) {
-          app.notifierVariant = 'success'
+          that.notifierVariant = 'success'
         })
         .catch(function (error) {
           console.log(error)
-          app.message = "{{ gettext('unexpected_error', request) }}"
-          app.notifierVariant = "warning"
+          that.message = "{{ gettext('unexpected_error', request=request) }}"
+          that.notifierVariant = "warning"
         })
 
         // for perf reason, we do not wait for the server response
         //remove immediately the item from the list of items
-        if (!app.show_deja_vu) {
-          app.items = app.items.filter(element => element.sku !== item.sku)
+        if (!that.show_deja_vu) {
+          that.items = that.items.filter(element => element.sku !== item.sku)
           // decrease the count
-          app.itemsCount -=1
+          that.itemsCount -=1
         }
       },
 
@@ -576,12 +573,12 @@
         axios.post(`/users/${that.user_id}?zone=${that.zone}`, body)
         .then(function (response) {
           //app.message = response.data.message
-          app.notifierVariant = 'success'
+          that.notifierVariant = 'success'
         })
         .catch(function (error) {
           console.log(error)
-          app.message = "{{ gettext('unexpected_error', request) }}"
-          app.notifierVariant = "warning"
+          that.message = "{{ gettext('unexpected_error', request=request) }}"
+          that.notifierVariant = "warning"
         })
 
       },
@@ -593,10 +590,10 @@
       asyncFindCities: function(query) {
         if (query.length > 0) {
           this.isLoadingCities = true
-          axios.get(`/terms/city?zone=${app.zone}&q=${query}`)
+          axios.get(`/terms/city?zone=${that.zone}&q=${query}`)
             .then(function (response) {
-              app.citiesList = response.data.results.filter(item => item.trim()!=='')
-              app.isLoadingCities = false
+              that.citiesList = response.data.results.filter(item => item.trim()!=='')
+              that.isLoadingCities = false
             })
             .catch(function (error) {
               console.error(error);

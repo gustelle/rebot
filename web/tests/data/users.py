@@ -1,31 +1,21 @@
 import uuid
+import random
 
-from .products import VALID_PRODUCTS, get_product_id
+from .products import VALID_PRODUCTS, get_product_id, random_product
 
 from .base_data import ZONE
+
 
 VALID_USERS=[
         {"id": str(uuid.uuid4()), "firstname": "John", "lastname": "Doe"},
         {
             "id": str(uuid.uuid4()),
-             "firstname": "Jim",
-             "lastname": "Pete",
-             "deja_vu": {
-                 "test":
-                     list(set([
-                            get_product_id(VALID_PRODUCTS[0]),
-                            get_product_id(VALID_PRODUCTS[1])
-                        ])
-                    )
-            },
-            "tbv": {
-                "test": [get_product_id(VALID_PRODUCTS[2])]
-            },
+            "firstname": "Jim",
+            "lastname": "Pete",
+            "deja_vu": {ZONE: list(set([get_product_id(random_product()) for i in range(0, len(VALID_PRODUCTS)-1)]))},
+            "tbv": {ZONE: list(set([get_product_id(random_product()) for i in range(0, len(VALID_PRODUCTS)-1)]))},
             "filter": {
-                "city": list(set([
-                            VALID_PRODUCTS[2]["city"], VALID_PRODUCTS[3]["city"]
-                            ])
-                        ),
+                "city": list(set([random_product().get('city') for i in range(0, len(VALID_PRODUCTS)-1)])),
                 "max_price": float(290000),
                 "include_deja_vu": True
             }

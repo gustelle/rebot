@@ -52,9 +52,18 @@
 
         <b-navbar toggleable="md" variant="light">
 
-          <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
+          <b-navbar-brand href="/welcome">Rebot</b-navbar-brand>
 
-          <b-navbar-brand href="#">{{ user.get('firstname') + ' ' + user.get('lastname') }}</b-navbar-brand>
+          <b-navbar-nav class="ml-auto">
+            {% if user %}
+            <em>{{ user.firstname }} {{ user.lastname }}</em>
+            {% else %}
+            <b-nav-form>
+              <b-button href="/login">{{ gettext('cta_login', request=request) }}</b-button>
+            </b-nav-form>
+            {% endif %}
+
+          </b-navbar-nav>
 
         </b-navbar>
 

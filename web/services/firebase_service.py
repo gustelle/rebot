@@ -45,12 +45,6 @@ class FirebaseService():
         return utils.safe_text(text)
 
 
-    def _to_array(self, value):
-        """convert a string to a list"""
-        if isinstance(value, str):
-            return [e.strip() for e in value.split(',')]
-        return value
-
 
     @cachedmethod(operator.attrgetter('_cache'), lock=operator.attrgetter('_lock'))
     def _get_from_cache(self, entry_key):
@@ -86,19 +80,18 @@ class FirebaseService():
         if self.tenant is None or not self.tenant:
             return ServiceError("Tenant not set")
 
-        # key provided is taken "as-is"
-        # key = self._sanitize_text(key)
-
         if use_cache:
             return self._get_from_cache(key).val()
         else:
             with self._pool.lease() as conn:
                 self.db = conn.db
                 self.token = conn.token
-                val = self.db.child(self.tenant).child(key).get(token=self.token).val()
-
-                self.logger.debug(f"Fetched non-cached value for key '{key}': {val}")
-                return val
+                try:
+                    val = self.db.child(self.tenant).child(key).get(token=self.token).val()
+                    self.logger.debug(f"Fetched non-cached value for key '{key}': {val}")
+                    return val
+                except Exception as e:
+                    self.logger.error(f"Error fetching value for key {key}", e)
 
 
     def set_value(self, key, value):

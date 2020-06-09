@@ -6,4 +6,4 @@ export FIREBASE_CONFIG=$(<"/app/conf/firebase-service-key.json")
 
 # run tests
 python -m pytest -v --testdox -s
-# python -m pytest tests/blueprints/test_users.py -vv --testdox -s
+# python -m pytest tests/services/test_user_service.py::test_save_firstname -vv --testdox -s

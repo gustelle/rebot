@@ -40,6 +40,6 @@ Tasks
 """
 
 def cleanup_user(zone, user_id):
-    LOGGER.info(f"Triggering a cleanup of the user {user_id} on zone {zone}")
+    LOGGER.debug(f"Triggering a cleanup of the user {user_id} on zone {zone}")
     job = low_q.enqueue('jobs.user_tasks.do_cleanup', zone, user_id)
     return job.id

@@ -3,11 +3,13 @@ import copy
 import pytest
 import uuid
 
-from objects import User
+from objects import User, UserFilter
 
 from services.user_service import UserService
 
+from tests.data.users import assert_user_equals
 from tests.data.base_data import ZONE
+from tests.data.products import get_product_id
 
 from services.exceptions import ServiceError
 
@@ -59,7 +61,7 @@ async def test_get_comma_separated_values(test_cli, mocker, dataset, pyrebase_db
     pyrebase_db.child(firebase_root_node + "/users").child(uid).remove()
 
 
-async def test_save_user_raise_error(test_cli, mocker, dataset):
+async def test_save_user_not_a_user(test_cli, mocker, dataset):
     """if the user is not of type User"""
     obj = dict()
     with pytest.raises(ServiceError):
@@ -94,3 +96,141 @@ async def test_save_user(test_cli, mocker, dataset):
     assert user.filter.include_deja_vu == False
     assert user.filter.city ==  [e.strip() for e in obj["filter"]["city"].split(',')]
     assert user.filter.max_price ==  float(obj["filter"]["max_price"])
+
+
+async def test_save_partial_no_id(test_cli, mocker, dataset):
+    """"""
+    obj = {
+        "filter": {
+            "include_deja_vu": "false",
+            "city": "h, i",
+            "max_price": "1"
+        }
+    }
+    with pytest.raises(ValueError):
+        u_service = UserService()
+        user = u_service.save_partial("", **obj)
+
+
+async def test_save_firstname(test_cli, mocker, dataset, pyrebase_db, firebase_root_node):
+    """only firstname is updated, rest is unchanged"""
+    obj = {
+        "firstname": str(uuid.uuid4())
+    }
+    ds = copy.deepcopy(dataset['users']['valid'][1])
+
+    u_service = UserService()
+    saved_user = u_service.save_partial(ds['id'], **obj)
+
+    # compare users
+    ds['firstname'] = obj['firstname']
+
+    assert isinstance(saved_user, User)
+
+    # the user is supposed to exist already, so normally it should have been updated
+    # without touching the other fields
+    assert_user_equals(ds, saved_user.to_dict())
+
+    # rollback the update
+    pyrebase_db.child(firebase_root_node + "/users").child(ds['id']).set(dataset['users']['valid'][1])
+
+
+async def test_save_lastname(test_cli, mocker, dataset, pyrebase_db, firebase_root_node):
+    """only lastname is updated, rest is unchanged"""
+    obj = {
+        "lastname": str(uuid.uuid4())
+    }
+    ds = copy.deepcopy(dataset['users']['valid'][1])
+
+    u_service = UserService()
+    saved_user = u_service.save_partial(ds['id'], **obj)
+
+    # compare users
+    ds['lastname'] = obj['lastname']
+
+    assert isinstance(saved_user, User)
+    assert_user_equals(ds, saved_user.to_dict())
+
+    # rollback the update
+    pyrebase_db.child(firebase_root_node + "/users").child(ds['id']).set(dataset['users']['valid'][1])
+
+
+async def test_save_tbv(test_cli, mocker, dataset, pyrebase_db, firebase_root_node):
+    """only tbv is updated, rest is unchanged"""
+    obj = {
+        "tbv": {ZONE: [
+            get_product_id({
+                'sku': str(uuid.uuid4())
+            })
+        ]}
+    }
+    ds = copy.deepcopy(dataset['users']['valid'][1])
+
+    u_service = UserService()
+    saved_user = u_service.save_partial(ds['id'], **obj)
+
+    # compare users
+    ds['tbv'] = obj['tbv']
+
+    assert isinstance(saved_user, User)
+    assert_user_equals(ds, saved_user.to_dict())
+
+    # rollback the update
+    pyrebase_db.child(firebase_root_node + "/users").child(ds['id']).set(dataset['users']['valid'][1])
+
+
+async def test_save_deja_vu(test_cli, mocker, dataset, pyrebase_db, firebase_root_node):
+    """only deja_vu is updated, rest is unchanged"""
+    obj = {
+        "deja_vu": {
+            ZONE: [
+                get_product_id({
+                    'sku': str(uuid.uuid4())
+                })
+            ]
+        }
+    }
+    ds = copy.deepcopy(dataset['users']['valid'][1])
+
+    u_service = UserService()
+    saved_user = u_service.save_partial(ds['id'], **obj)
+
+    # compare users
+    ds['deja_vu'] = obj['deja_vu']
+
+    assert isinstance(saved_user, User)
+    assert_user_equals(ds, saved_user.to_dict())
+
+    # rollback the update
+    pyrebase_db.child(firebase_root_node + "/users").child(ds['id']).set(dataset['users']['valid'][1])
+
+
+async def test_save_filter(test_cli, mocker, dataset, pyrebase_db, firebase_root_node):
+    """only filter is updated, rest is unchanged"""
+    obj = {
+        "filter": UserFilter({
+            "city": [
+                get_product_id({
+                    'sku': str(uuid.uuid4())
+                }),
+                get_product_id({
+                    'sku': str(uuid.uuid4())
+                })
+            ],
+            "max_price": float(3),
+            "include_deja_vu": False
+        })
+    }
+    ds = copy.deepcopy(dataset['users']['valid'][1])
+
+    u_service = UserService()
+    saved_user = u_service.save_partial(ds['id'], **obj)
+
+    # compare users
+    ds['filter'] = obj['filter'].to_dict()
+
+    assert isinstance(saved_user, User)
+    assert_user_equals(ds, saved_user.to_dict())
+
+    # rollback the update
+    pyrebase_db.child(firebase_root_node + "/users").child(ds['id']).set(dataset['users']['valid'][1])

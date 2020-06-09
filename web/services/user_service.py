@@ -10,7 +10,7 @@ from cachetools import cachedmethod
 from .firebase_service import FirebaseService
 from .exceptions import ServiceError
 
-from objects import User
+from objects import User, UserFilter
 
 import config
 import utils
@@ -45,19 +45,6 @@ class UserService(FirebaseService):
         # to have an self-descripting object
         entry['id'] = id
 
-        # fields may be interpreted as strings when values are single
-        # be careful to return array
-        if 'tbv' in entry:
-            for zone, value in entry['tbv'].items():
-                entry['tbv'][zone] = self._to_array(value)
-
-        if 'deja_vu' in entry:
-            for zone, value in entry['deja_vu'].items():
-                entry['deja_vu'][zone] = self._to_array(value)
-
-        if 'filter' in entry and 'city' in entry['filter']:
-            entry['filter']['city'] = self._to_array(entry['filter']['city'])
-
         u = User.from_dict(entry)
         self.logger.debug(f"Loaded user: {u.to_dict()}")
         return u
@@ -65,30 +52,67 @@ class UserService(FirebaseService):
 
     def save_user(self, user):
         """
-        Stores the user within firebase and returns the stored User
+        Saves user with the one provided, if the user already exists, it is overriden
+        For partial update of the user, use save_partial
 
         :param user: a User object
+        :return user: a User object
         """
-
         if not user or type(user)!=User:
             raise ServiceError(f"User must be of type User")
 
-        self.logger.debug(f"UserService.save_user {user.id} : {user.to_dict()}")
-        self.set_value(user.id, user.to_dict())
+        user_dict = user.to_dict()
 
-        saved_u = self.get_value(str(user.id), use_cache=False)
+        self.set_value(user_dict.get('id'), user_dict)
+        return self.get_user(user_dict.get('id'))
 
-        # fields may be interpreted as strings when values are single
-        # be careful to return arrays
-        if 'tbv' in saved_u:
-            for zone, value in saved_u['tbv'].items():
-                saved_u['tbv'][zone] = self._to_array(value)
 
-        if 'deja_vu' in saved_u:
-            for zone, value in saved_u['deja_vu'].items():
-                saved_u['deja_vu'][zone] = self._to_array(value)
+    def save_partial(self, id, filter=None, tbv=None, deja_vu=None, firstname=None, lastname=None):
+        """
+        Updates attributes that are provided
+        if user does not exists, creates a new one with partial values provided
 
-        if 'filter' in saved_u and 'city' in saved_u['filter']:
-            saved_u['filter']['city'] = self._to_array(saved_u['filter']['city'])
+        This method is useful to update only the filter while keeping other attributes
+        """
+        id = str(id)
+        if not id or not id.strip():
+            raise ValueError(f"invalid id to set UserFilter")
 
-        return User.from_dict(saved_u)
+        self.logger.debug(f"Partial update of user {id} for atts {locals()}")
+
+        _user_to_update = self.get_user(id)
+        if not _user_to_update:
+            # save_user
+            if not filter:
+                filter_dict = {}
+            else:
+                filter_dict = filter.to_dict()
+
+            _user_to_update = User.from_dict({
+                    'id': id,
+                    'tbv': tbv,
+                    'deja_vu': deja_vu,
+                    'firstname': firstname,
+                    'lastname': lastname,
+                    'filter': filter_dict
+                })
+        else:
+
+            args = locals()# gets a dictionary of all local parameters
+
+            # some atts are protected (start with _) because updated through a setter/getter
+            # thus be careful to these atts
+            user_model_atts = [item[1:] for item in list(_user_to_update.__dict__.keys()) if item.startswith('_')]
+            user_model_atts.extend([item for item in list(_user_to_update.__dict__.keys()) if not item.startswith('_')])
+
+            for arg_name in args:
+                if arg_name in user_model_atts:
+                    if args[arg_name]:
+                        self.logger.debug(f"Updating {arg_name} ({args[arg_name]})")
+                        setattr(_user_to_update, arg_name, args[arg_name])
+                    else:
+                        self.logger.debug(f"User {id}: {arg_name} ignored [{args[arg_name]}]")
+
+        self.set_value(id, _user_to_update.to_dict())
+
+        return self.get_user(id)

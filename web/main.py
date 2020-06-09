@@ -1,15 +1,19 @@
 # -*- coding: utf-8 -*-
-import os
-import logging
+import aiohttp
+import aioredis
 from collections import defaultdict
+import logging
+import os
+
+from sanic import Sanic
+from sanic_babel import Babel
+from _sanic_session import Session, AIORedisSessionInterface
 
 import ujson as json
-from sanic import Sanic
-
-from sanic_babel import Babel
 
 from blueprints import (catalogs_blueprint, products_blueprint,
-                        users_blueprint, terms_blueprint, areas_blueprint)
+                        users_blueprint, terms_blueprint, areas_blueprint,
+                        welcome_blueprint, login_blueprint)
 
 from objects import User
 
@@ -21,18 +25,49 @@ import utils
 #############################################################################
 # App startup
 
+LOGGER = logging.getLogger("app")
+
 app = Sanic('app')
+
+""" Auth Session """
+
+session = Session()
+
+@app.listener('before_server_start')
+async def init_user_session(app, loop) -> None:
+    app.redis = await aioredis.create_redis_pool(
+        config.Q.REDIS_URL
+    )
+    session.init_app(app, interface=AIORedisSessionInterface(app.redis))
+
+
+@app.listener('before_server_start')
+async def init_aiohttp_session(sanic_app, _loop) -> None:
+    sanic_app.async_session = aiohttp.ClientSession()
+
+
+@app.listener('after_server_stop')
+async def close_aiohttp_session(sanic_app, _loop) -> None:
+    await sanic_app.async_session.close()
+
+
+
+""" Routes """
 
 # serve the static files under /static
 CWD = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 app.static('/static', os.path.sep.join([CWD, 'blueprints', 'static']))
 
+app.register_blueprint(login_blueprint)
+app.register_blueprint(welcome_blueprint)
 app.register_blueprint(products_blueprint)
 app.register_blueprint(catalogs_blueprint)
 app.register_blueprint(users_blueprint)
 app.register_blueprint(terms_blueprint)
 app.register_blueprint(areas_blueprint)
 
+
+""" i18n """
 # register Babel translations
 # fixes translations not found issue
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = os.path.sep.join([CWD, 'translations'])
@@ -41,28 +76,17 @@ babel = Babel(app, configure_jinja=False)
 
 @babel.localeselector
 def get_locale(request):
-    # if a user is logged in, use the locale from the user settings
-    if request.get('current_user') is not None:
-        return request['current_user'].lang
-    # otherwise try to guess the language from the user accept
+    # try to guess the language from the user accept
     # header the browser transmits. The first wins.
     langs = request.headers.get('accept-language')
     if langs:
         return langs.split(';')[0].split(',')[0].replace('-', '_')
 
 
-@babel.timezoneselector
-def get_timezone(request):
-    if request.get('current_user') is not None:
-        return request['current_user'].timezone
-
 #############################################################################
 # App constants
-LOGGER = logging.getLogger("app")
 
-"""
-Data installation
-"""
+""" Data install """
 
 @app.listener('after_server_start')
 async def register_base_data(app, loop):
