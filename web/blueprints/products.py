@@ -149,15 +149,8 @@ async def list_products(
 
         # query entries
         service = ProductService(zone)
-        entries = service.find(
+        entries, count = service.find(
             page=page,
-            city=city,
-            max_price=max_price,
-            exclude=exclude_items,
-            feature=feature,
-            catalog=catalog
-        )
-        count = service.count(
             city=city,
             max_price=max_price,
             exclude=exclude_items,

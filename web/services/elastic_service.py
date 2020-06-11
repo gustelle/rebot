@@ -43,11 +43,6 @@ class QueryBase(ABC):
         pass
 
 
-    @abstractmethod
-    def count(self, *args, **kwargs):
-        pass
-
-
 class ElasticSession(QueryBase):
     """
     Provides a wrapper around the business objects Product and Review
@@ -93,10 +88,6 @@ class ElasticSession(QueryBase):
 
     def find(self, *args, **kwargs):
         raise NotImplementedError("prefer calling the search()")
-
-
-    def count(self, *args, **kwargs):
-        raise NotImplementedError("prefer counting from the search().count()")
 
 
     def get_client(self):

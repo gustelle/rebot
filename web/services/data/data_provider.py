@@ -20,7 +20,7 @@ class _ObjectQuery():
 
     :Example:
     >>> _ObjectQuery.find(catalog, Review, page=1)
-    [Review<1>, Review<2>]
+    [Review<1>, Review<2>], 2
 
     """
 
@@ -93,6 +93,8 @@ class _ObjectQuery():
         :param feature: optional list of features. A feature is a "term" (a search facet) for Elasticsearch
         :param catalog: optional, a catalog term
 
+        :return tuple: (list of results, count)
+
         :Example:
         >>> ObjectQuery.find(Product)
         [Product<1>, Product<2>]
@@ -113,37 +115,13 @@ class _ObjectQuery():
         paginate_start = config.ES.RESULTS_PER_PAGE*(page-1)
         paginate_end = config.ES.RESULTS_PER_PAGE*(page)
 
+        count_query = es_query
+
         es_query = es_query[paginate_start:paginate_end]
 
         logger.debug(f"Find query: {es_query.to_dict()}")
 
-        return es_query.execute()
-
-
-    def count(self, zone, obj_type, city=None, max_price=0, exclude=None, feature=None, catalog=None):
-        """
-        generic object counter
-
-        :Example:
-        >>> ObjectQuery.count(catalog, Product)
-        2
-        """
-        logger = logging.getLogger('app')
-
-        es_query = self._build_query(
-            obj_type,
-            zone=zone,
-            city=city,
-            max_price=max_price,
-            exclude=exclude,
-            feature=feature,
-            catalog=catalog
-        )
-
-        logger.debug(f"count query: {es_query.to_dict()}")
-        logger.debug(f"count = {es_query.count()}")
-
-        return es_query.count()
+        return es_query.execute(), count_query.count()
 
 
     def search(self, zone, obj_type):
@@ -202,7 +180,7 @@ class ProductService():
 
     def find(self, page=1, city=None, max_price=0, exclude=None, feature=None, catalog=None):
         """
-        returns a paged list of Product filtered on catalog
+        returns a tuple : (paged list of Product filtered on catalog, count)
 
         :param city: optional list of cities
         :param max_price: optional max price to filter results
@@ -214,24 +192,6 @@ class ProductService():
             city=city,
             max_price=max_price,
             page=page,
-            exclude=exclude,
-            feature=feature,
-            catalog=catalog)
-
-
-    def count(self, city=None, max_price=0, exclude=None, feature=None, catalog=None):
-        """
-        counts all Products on catalog
-
-        :param city: optional list of cities
-        :param max_price: optional max price to filter results
-        :param catalog: a catalog term
-        """
-        return _ObjectQuery().count(
-            self.zone,
-            Product,
-            city=city,
-            max_price=max_price,
             exclude=exclude,
             feature=feature,
             catalog=catalog)

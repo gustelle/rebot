@@ -105,8 +105,7 @@ async def test_list(test_cli, mocker, dataset):
 
     data_provider = ProductService(ZONE)
 
-    entries = data_provider.find(page=1)
-    count = data_provider.count()
+    entries, count = data_provider.find(page=1)
 
     response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[0]['id']}")
 
@@ -141,12 +140,12 @@ async def test_list_products_jsonschema_error(test_cli, mocker, dataset):
     del a_product['sku']
 
     mock_find = mocker.patch("services.data.data_provider.ProductService.find")
-    mock_find.return_value = [Product.from_dict(p) for p in training_dataset]
+    mock_find.return_value = [Product.from_dict(p) for p in training_dataset], len(training_dataset)
 
     # training_dataset contains a product that should be deleted !
 
-    mock_count = mocker.patch("services.data.data_provider.ProductService.count")
-    mock_count.return_value = len(training_dataset)
+    # mock_count = mocker.patch("services.data.data_provider.ProductService.count")
+    # mock_count.return_value = len(training_dataset)
 
     response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[0]['id']}")
 
@@ -164,8 +163,7 @@ async def test_list_filter_feature(test_cli, mocker, dataset):
 
     data_provider = ProductService(ZONE)
 
-    entries = data_provider.find(feature=["3 chambres"])
-    count = data_provider.count(feature=["3 chambres"])
+    entries, count = data_provider.find(feature=["3 chambres"])
 
     response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[0]['id']}&feature=3 chambres")
 
@@ -188,8 +186,7 @@ async def test_list_combine_features(test_cli, mocker, dataset):
 
     features_list = ["3 chambres", "jardin"]
 
-    entries = data_provider.find(feature=features_list)
-    count = data_provider.count(feature=features_list)
+    entries, count = data_provider.find(feature=features_list)
 
     response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[0]['id']}&feature={','.join(features_list)}")
 
@@ -212,7 +209,7 @@ async def test_list_exclude_deja_vu(test_cli, mocker, dataset):
 
     # take user[1] (id=2) which has some deja_vu
     # and make a manual exclusion of the deja_vu
-    user_entries = data_provider.find(
+    user_entries, count = data_provider.find(
         # city=users_dataset[1]['filter']['city'],
         # max_price=users_dataset[1]['filter']['max_price'],
         exclude=users_dataset[1]['deja_vu'][ZONE]
@@ -250,7 +247,7 @@ async def test_list_include_deja_vu(test_cli, mocker, dataset):
     data_provider = ProductService(ZONE)
 
     # do not exclude deja_vu
-    raw_entries = data_provider.find(
+    raw_entries, count = data_provider.find(
         # city=users_dataset[1]['filter']['city'],
         # max_price=users_dataset[1]['filter']['max_price'],
     )
@@ -285,16 +282,16 @@ async def test_list_override_city(test_cli, mocker, dataset):
     cities = ['test1', 'test2']
 
     mock_find = mocker.patch("services.data.data_provider.ProductService.find")
-    mock_count = mocker.patch("services.data.data_provider.ProductService.count")
+    # mock_count = mocker.patch("services.data.data_provider.ProductService.count")
 
     response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[1]['id']}&city={','.join(cities)}")
 
     # assert mock_user is called
     find_args, find_kwargs = mock_find.call_args
-    count_args, count_kwargs = mock_count.call_args
+    # count_args, count_kwargs = mock_count.call_args
 
     assert find_kwargs['city'] == cities
-    assert count_kwargs['city'] == cities
+    # assert count_kwargs['city'] == cities
 
 
 async def test_list_override_max_price(test_cli, mocker, dataset):
@@ -305,13 +302,13 @@ async def test_list_override_max_price(test_cli, mocker, dataset):
     max_price = 1
 
     mock_find = mocker.patch("services.data.data_provider.ProductService.find")
-    mock_count = mocker.patch("services.data.data_provider.ProductService.count")
+    # mock_count = mocker.patch("services.data.data_provider.ProductService.count")
 
     response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[1]['id']}&max_price={max_price}")
 
     # assert mock_user is called
     find_args, find_kwargs = mock_find.call_args
-    count_args, count_kwargs = mock_count.call_args
+    # count_args, count_kwargs = mock_count.call_args
 
     assert find_kwargs['max_price'] == max_price
-    assert count_kwargs['max_price'] == max_price
+    # assert count_kwargs['max_price'] == max_price
