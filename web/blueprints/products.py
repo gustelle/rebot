@@ -101,7 +101,8 @@ async def list_products(
     city: fields.List[str]=None,
     max_price: str='',
     feature: fields.List[str]=None,
-    catalog: str=''):
+    catalog: str='',
+    tbv: bool=False):
     """
     the products of a given zone
 
@@ -112,6 +113,8 @@ async def list_products(
     :param city: comma separated list of cities to filter results (user prefs are not considered). When void, we consider the cities should not be considered as a filter
     :param max_price: float. When set to O, we consider the price should not be considered as a filter
     :param catalog: optional, the real estate agency on which the real estate property has been scraped. Ignored when void
+    :param tbv: when set to True, only the properties marked "tbv" are listed. Defaults is False
+
     """
 
     if not zone.strip():
@@ -158,8 +161,6 @@ async def list_products(
             catalog=catalog
         )
 
-        rest = count%config.ES.RESULTS_PER_PAGE
-        pages = count//config.ES.RESULTS_PER_PAGE if rest == 0 else count//config.ES.RESULTS_PER_PAGE + 1
         results = [_entry.to_json(include_meta=True) for _entry in entries]
 
         LOGGER.debug(f"Filtered Results ({count} entries) : {[k.meta.id for k in entries]}")
@@ -167,11 +168,21 @@ async def list_products(
         ##################################################
         # Mark products as deja_vu or TBV
         for x in results:
-            if user and user.tbv and x in user.tbv.get(zone):
+            if user and user.tbv and x['_id'] in user.tbv.get(zone):
                 x['tbv']=True
-            if user and user.deja_vu and x in user.deja_vu.get(zone) and user.filter.include_deja_vu:
+            if user and user.deja_vu and x['_id'] in user.deja_vu.get(zone) and user.filter.include_deja_vu:
                 x['deja_vu']=True
 
+        ##################################################
+        # eventually filter properties marked as tbv
+        if tbv:
+            filtered_list = []
+            for x in results:
+                if x.get('tbv'):
+                    filtered_list.append(x)
+                else:
+                    count -= 1
+            results = filtered_list
 
         ##################################################
         # map catalog info
@@ -212,20 +223,19 @@ async def list_products(
                 errors = sorted(v.iter_errors(rep), key=lambda e: e.path)
 
                 if errors:
-
                     LOGGER.warning(f"Error in the schema of {rep}: {[e.message for e in errors]}")
                     # item is not inserted in the list
                     # withdraw it from the total count
                     count -= 1
-                    # and refresh pagination
-                    rest = count%config.ES.RESULTS_PER_PAGE
-                    pages = count//config.ES.RESULTS_PER_PAGE if rest == 0 else count//config.ES.RESULTS_PER_PAGE + 1
-
                 else:
                     safe_list.append(rep)
 
             # final list returned to the user
             results = safe_list
+
+        # and refresh pagination after all the filterings
+        rest = count%config.ES.RESULTS_PER_PAGE
+        pages = count//config.ES.RESULTS_PER_PAGE if rest == 0 else count//config.ES.RESULTS_PER_PAGE + 1
 
         return response.json({
             'success': True,
@@ -236,9 +246,8 @@ async def list_products(
             'current_page': page,
         })
     except Exception as e:
-        LOGGER.info(e)
-        return response.json({})
-
+        LOGGER.error(e)
+        raise ServerError(e)
 
 
 ###################################################################################################

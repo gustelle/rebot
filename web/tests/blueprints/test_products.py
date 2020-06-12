@@ -124,6 +124,35 @@ async def test_list(test_cli, mocker, dataset):
     assert jay.get('catalogs') == catalogs
 
 
+async def test_list_tbv(test_cli, mocker, dataset):
+    """only products marked as TBV are listed"""
+
+    users_dataset = copy.deepcopy(dataset['users']['valid'])
+
+    data_provider = ProductService(ZONE)
+
+    entries, count = data_provider.find(page=1)
+
+    response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[1]['id']}&tbv=true")
+
+    jay = await response.json()
+
+    # filter on TBV
+    # only the products listed in the user filters "tbv" are kept
+    list_entries = list([entry.to_json(include_meta=True) for entry in entries])
+    list_entries = list(filter(lambda x : x['_id'] in users_dataset[1]['tbv'][ZONE], list_entries))
+
+    response_prods = jay.get('products')
+
+    # print([x['_id'] for x in list_entries])
+    # print("----------")
+    # print([x['_id'] for x in response_prods])
+
+    # perfect match
+    assert all(_prod['_id'] in [x['_id'] for x in list_entries] for _prod in response_prods)
+    assert all(_prod['_id'] in [x['_id'] for x in response_prods] for _prod in list_entries)
+
+
 async def test_list_products_jsonschema_error(test_cli, mocker, dataset):
     """in case a product is not compliant with the jsonschema, it is excluded from the returned list"""
 
@@ -141,11 +170,6 @@ async def test_list_products_jsonschema_error(test_cli, mocker, dataset):
 
     mock_find = mocker.patch("services.data.data_provider.ProductService.find")
     mock_find.return_value = [Product.from_dict(p) for p in training_dataset], len(training_dataset)
-
-    # training_dataset contains a product that should be deleted !
-
-    # mock_count = mocker.patch("services.data.data_provider.ProductService.count")
-    # mock_count.return_value = len(training_dataset)
 
     response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[0]['id']}")
 

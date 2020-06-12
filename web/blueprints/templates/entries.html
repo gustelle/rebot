@@ -115,9 +115,9 @@
 
 </b-container>
 
-<b-container ref="entriesContainer" v-if="items.length > 0 && !isLoading">
+<b-container ref="entriesContainer" v-if="!isLoading">
 
-  <b-row>
+  <b-row v-if="items.length > 0">
     <b-col>
       <b-pagination-nav align="center" @click.native.stop.prevent="onPageChange" :number-of-pages="pagesCount" v-model="currentPage"></b-pagination-nav>
     </b-col>
@@ -127,6 +127,15 @@
     <b-col>
       <p><em>[[itemsCount]]</em> {{ gettext('items_found', request=request) }}</p>
     </b-col>
+    {% if user %}
+    <b-col>
+      <b-form-group horizontal label="{{ gettext('label_show_tbv', request=request) }}">
+        <b-input-group>
+          <b-form-checkbox v-model="show_only_tbv" switch @input="filterEntries"></b-form-checkbox>
+        </b-input-group>
+      </b-form-group>
+    </b-col>
+    {% endif %}
   </b-row>
 
   <b-row>
@@ -200,7 +209,7 @@
       <b-row>
     </b-col>
   </b-row>
-  <b-row>
+  <b-row v-if="items.length > 0">
       <b-col>
         <b-pagination-nav align="center" @click.native.stop.prevent="onPageChange" :number-of-pages="pagesCount" v-model="currentPage"></b-pagination-nav>
       </b-col>
@@ -220,6 +229,7 @@
       isLoading: false,
       max_price: {{ max_price }}, // max_price can be set in the url
       show_deja_vu: false,
+      show_only_tbv: false,
       // selected cities
       city: {% if city %}{{ city|tojson }}{% else %}[]{% endif %}, // city can be set in the url
       // possible cities proposed to the user
@@ -300,7 +310,7 @@
         let cities_ = that.city.join(',')
         let max_price_ = that.max_price
 
-        let route = `/products?zone=${that.zone}&page=${that.currentPage}&user_id=${that.user_id}&feature=${that.selectedFacets}&city=${cities_}&max_price=${max_price_}&catalog=${that.catalog}`
+        let route = `/products?zone=${that.zone}&page=${that.currentPage}&user_id=${that.user_id}&feature=${that.selectedFacets}&city=${cities_}&max_price=${max_price_}&catalog=${that.catalog}&tbv=${that.show_only_tbv}`
 
         axios.get(route)
           .then(function (response) {
@@ -352,8 +362,6 @@
               that.message = ''
               that.isLoading = false
 
-              // remove the loading overlay
-              // loader.hide()
 
             } else {
               that.message = "{{gettext('no_entries_found', request=request)}}"
@@ -366,11 +374,7 @@
               that.currentPage = 1
               that.pagesCount = 1
 
-              // remove the loading overlay
-              // loader.hide()
-
             }
-
           })
           .catch(function (error) {
             console.error(error);
@@ -431,7 +435,6 @@
       },
 
       filterEntries: function() {
-
         this.loadEntries()
         this.loadFacets()
       },
