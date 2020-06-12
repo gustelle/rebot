@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2020-06-02 15:28+0200\n"
+"POT-Creation-Date: 2020-06-12 13:52+0200\n"
 "PO-Revision-Date: 2020-05-15 16:14+0200\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: fr\n"
@@ -43,9 +43,6 @@ msgstr "Type a number"
 msgid "label_show_deja_vu"
 msgstr "Show me the items I've marked as deja vu"
 
-msgid "save_my_search"
-msgstr "Save these filters"
-
 msgid "item_deja_vu"
 msgstr "Mark this item as deja vu"
 
@@ -71,6 +68,37 @@ msgstr "New item"
 msgid "cta_login"
 msgstr "Login with Google"
 
+msgid "cta_list_products"
+msgstr "View the properties"
+
+msgid "cta_search"
+msgstr "Find properties"
+
+msgid "cta_save_filters"
+msgstr "Save these filters"
+
+# ################## User actions
+msgid "filter_save_success"
+msgstr "Your filtering preferences are saved"
+
+# #################### Welcome
+msgid "welcome_header"
+msgstr "Find your new home quickly"
+
+msgid "welcome_lead_text"
+msgstr ""
+"We aggregate real estate properties from agencies and proposes a simple "
+"search experience"
+
+msgid "welcome_paragraph"
+msgstr "Don't forget to login to save your search preferences"
+
+msgid "highlights_paragraph"
+msgstr "Here are some of the properties we found:"
+
 #~ msgid "placeholder_select_list"
 #~ msgstr "Select an area:"
+
+#~ msgid "save_my_search"
+#~ msgstr "Save these filters"
 

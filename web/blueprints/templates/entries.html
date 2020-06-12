@@ -80,7 +80,7 @@
       {% if user %}
       <b-row>
         <b-col>
-          <b-button @click="saveUserFilter">{{ gettext('save_my_search', request=request) }}</b-button>
+          <b-button @click="saveUserFilter">{{ gettext('cta_save_filters', request=request) }}</b-button>
         </b-col>
       </b-row>
       {% endif %}
@@ -218,10 +218,10 @@
     delimiters: ['[[', ']]'],
     data: {
       isLoading: false,
-      max_price: '',
+      max_price: {{ max_price }},
       show_deja_vu: false,
       // selected cities
-      city: [],
+      city: {% if city %}{{ city|tojson }}{% else %}[]{% endif %},
       // possible cities proposed to the user
       citiesList: [],
       isLoadingCities: false,
@@ -252,6 +252,8 @@
     methods: {
 
       loadUserEntries: function() {
+
+        console.log(this.city)
 
         // fetch user filters if user is authenticated
         if (this.user_id!='') {
@@ -480,6 +482,8 @@
 
         var that = this
 
+        that.isLoading = true
+
         // pass partial=true to indicate that only the filter should be updated
         axios.post(`/users/${that.user_id}?zone=${that.zone}`, {
           'filter': {
@@ -492,13 +496,13 @@
           //app.message = response.data.message
           that.notifierVariant = 'success'
           that.message = "{{ gettext('filter_save_success', request=request) }}"
-          // load entries with the new user preferences
-          // app.loadUserEntries()
+          that.isLoading = false
         })
         .catch(function (error) {
           console.log(error)
           that.message = "{{ gettext('unexpected_error', request=request) }}"
           that.notifierVariant = "warning"
+          that.isLoading = false
         })
 
       },
@@ -588,6 +592,7 @@
       },
 
       asyncFindCities: function(query) {
+        var that = this
         if (query.length > 0) {
           this.isLoadingCities = true
           axios.get(`/terms/city?zone=${that.zone}&q=${query}`)

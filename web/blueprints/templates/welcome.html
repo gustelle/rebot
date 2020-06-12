@@ -1,8 +1,6 @@
 
 {% extends "layout.html" %}
 
-{% set active_page = "welcome" %}
-
 {% block content %}
 
 <b-container fluid="xl">
@@ -30,7 +28,22 @@
         <b-input-group>
           <multiselect
             placeholder="{{ gettext('placeholder_list_of_cities', request=request) }}"
-            ></multiselect>
+            v-model="city"
+            :options="citiesList"
+            :multiple="true"
+            :searchable="true"
+            :loading="isLoadingCities"
+            :internal-search="false"
+            :clear-on-select="true"
+            :close-on-select="true"
+            :options-limit="10"
+            :limit="10"
+            :limit-text="limitSelectedCitiesText"
+            :max-height="600"
+            :show-no-results="false"
+            :hide-selected="true"
+            @search-change="asyncFindCities"
+            @input="loadEntries"></multiselect>
         </b-input-group>
       </b-form-group>
     </b-col>
@@ -38,25 +51,121 @@
     <b-col>
       <b-form-group horizontal label="{{ gettext('label_max_price', request=request) }}">
         <b-input-group>
-          <b-form-input placeholder="{{ gettext('placeholder_max_price', request=request) }}"></b-form-input>
+          <b-form-input v-model="max_price" placeholder="{{ gettext('placeholder_max_price', request=request) }}"></b-form-input>
         </b-input-group>
       </b-form-group>
     </b-col>
 
+  </b-row>
+
+</b-container>
+
+<b-container>
+
+  <b-row>
     <b-col>
-      <b-form-group horizontal label="{{ gettext('label_max_price', request=request) }}">
-        <b-button variant="primary" href="http://localhost:7000/login">{{ gettext('cta_search', request=request) }}</b-button>
-      </b-form-group>
+      <div class="container-fluid mt-4">
+          <div class="row justify-content-center">
+            <b-button variant="success" :to=`http://localhost:7000/products/list?max_price=${this.max_price}&city=${this.city}`>
+                {{ gettext('cta_list_products', request=request) }}
+            </b-button>
+          </div>
+      </div>
     </b-col>
   </b-row>
+
+</b-container>
+
+<b-container>
+
+  <b-row>
+    <b-col>
+      <div class="container-fluid mt-4">
+          <div class="row justify-content-center">
+
+            {{ gettext('highlights_paragraph', request=request) }}
+
+          </div>
+      </div>
+    </b-col>
+  </b-row>
+
+</b-container>
+
+<b-container>
 
   <b-row>
     <b-col>
       <b-row>
-        Highlights
+        <div class="container-fluid mt-4">
+            <div class="row justify-content-center">
+                <div class="col-auto mb-3" v-for="card in items" :key="card.sku">
+                    <div class="card" style="width: 18rem;">
+                        <b-link :href="card.url" target="_blank">
+
+                          <b-carousel
+                            id="carousel-1"
+                            :interval="0"
+                            controls
+                            fade
+                            indicators>
+                            <b-carousel-slide v-for="slide in card.media"
+                              v-bind:img-src="slide"
+                              v-bind:img-alt="card.title"
+                            ></b-carousel-slide>
+
+                          </b-carousel>
+
+                        </b-link>
+                        <div class="card-body">
+                          <h5 class="card-title"><b-link :href="card.url" target="_blank">[[card.title]]</b-link></h5>
+                          <h6 class="card-subtitle mb-2 text-muted">
+                            <b-link v-on:click="filterByCity(card.city)">
+                              <i class="fas fa-city fa-fw" style="margin-right: 0.5rem"></i>[[card.city]]
+                            <b-link>
+                          </h6>
+                          <h6 class="card-subtitle mb-2 text-muted">
+                            <b-link v-on:click="filterByCatalog(card.catalog)">
+                              <i class="fas fa-sign fa-fw" style="margin-right: 0.5rem"></i>[[catalogs[card.catalog].long_name]]
+                            </b-link>
+                          </h6>
+                          <p class="card-text">
+                            <b-form-checkbox
+                              v-model="card.deja_vu"
+                              @change="setDejaVu(card)">
+                              {{ gettext('item_deja_vu', request=request) }}
+                            </b-form-checkbox>
+                          </p>
+                          <p class="card-text">
+                            <button type="button" class="btn btn-default btn-sm" v-on:click="setTBV(card)">
+                              <i class="fa-fw" v-bind:class="{'far fa-star': !card.tbv, 'fas fa-star': card.tbv}"></i>
+                              {{ gettext('item_to_be_visited', request=request) }}
+                            </button>
+                          </p>
+                          <p class="card-text">
+                            <button type="button" class="btn btn-default btn-sm">
+                              <h5><i class="fas fa-euro-sign fa-fw"></i>[[card.price]]</h5>
+                            </button>
+                            [[displayPropertySurface(card)]]
+                          </p>
+                        </div>
+                        <div v-if="card.is_new" class="card-footer bg-warning">
+                          {{ gettext('item_is_new', request=request) }}
+                        </div>
+                        <div class="card-footer">
+                          <i class="fas fa-id-card fa-fw"></i>[[card.sku]]
+                        </div>
+                        <div v-if="card.features" class="card-footer text-muted">
+                          <span v-for="feature in card.features"> [[feature]] </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
       <b-row>
     </b-col>
   </b-row>
+
 
 </b-container>
 
@@ -68,6 +177,198 @@
 
   var app = new Vue({
     el: '#app',
+    delimiters: ['[[', ']]'],
+    data: {
+      isLoading: false,
+      max_price: '',
+      show_deja_vu: false,
+      // selected cities
+      city: [],
+      // possible cities proposed to the user
+      citiesList: [],
+      isLoadingCities: false,
+      // the selected area (group of cities)
+      itemsCount : 0,       // total items count displayed at the top of the table
+      items: [],
+      currentPage : 1,      // current page of the table
+      pagesCount : 1,       // total number of pages on the table
+      message: '',
+      notifierVariant : 'info',
+      zone: {% if zone %}'{{ zone }}'{% else %}''{% endif %},
+      user_id: {% if user %}'{{ user.id }}'{% else %}''{% endif %},
+      user_deja_vu: {% if user and user.deja_vu and user.deja_vu.get(zone) %}{{ user.deja_vu.get(zone)|tojson }}{% else %}[]{% endif %}, // the list of user deja_vu
+      user_tbv: {% if user and user.tbv and user.tbv.get(zone) %}{{ user.tbv.get(zone)|tojson }}{% else %}[]{% endif %}          // the list of user tbv
+    },
+    mounted: function() {
+      this.loadUserEntries()
+    },
+    methods: {
+
+      loadUserEntries: function() {
+
+        // fetch user filters if user is authenticated
+        if (this.user_id!='') {
+          var that = this
+          // load user prefs
+          axios.get(`/users/${that.user_id}`)
+            .then(function (response) {
+
+              filter = response.data.result.filter
+              if (filter && typeof(filter.city)!=='undefined' && filter.city.length > 0) {
+                // filter.city can be either a list of elements
+                that.city = filter.city.filter(item => item.trim()!=='');
+
+              }
+              if (filter && typeof(filter.max_price)!=='undefined' && filter.max_price !== '') {
+                that.max_price = filter.max_price
+              }
+              if (filter && typeof(filter.include_deja_vu)!=='undefined') {
+                that.show_deja_vu = Boolean(filter.include_deja_vu)
+              }
+
+              that.loadEntries()
+
+            })
+            .catch(function (error) {
+              console.error(error);
+              that.message = "{{ gettext('unexpected_error', request=request) }}"
+              that.notifierVariant = "warning"
+            })
+
+        } else {
+          this.loadEntries()
+        }
+      },
+
+      loadEntries : function() {
+
+        var that = this
+        that.notifierVariant = 'info'
+        that.message = "{{ gettext('loading_entries', request=request) }}"
+        that.isLoading = true
+
+        // override possible user filters
+        let cities_ = that.city.join(',')
+        let max_price_ = that.max_price
+
+        let route = `/products?zone=${that.zone}&page=${that.currentPage}&user_id=${that.user_id}&city=${cities_}&max_price=${max_price_}`
+
+        axios.get(route)
+          .then(function (response) {
+
+            //app.facets = response.data.facets
+            entries = response.data.products
+            catalogs = response.data.catalogs
+
+            // update the counter
+            that.itemsCount = response.data.count
+
+            // for performance, do not update Vue after each row
+            // but update with all items in one-shot
+            if (entries.length>0) {
+              _ = []
+              entries.forEach(function(element) {
+
+                let item = {
+                  'title' : element.title,
+                  'description': element.description,
+                  'id': element._id,
+                  'sku': element.sku,
+                  'catalog': element.catalog,
+                  'city': element.city,
+                  'price': element.price,
+                  'url': element.url,
+                  'media': element.media,
+                  'tbv': (that.user_tbv.includes(element._id)),
+                  'deja_vu': (that.user_deja_vu.includes(element._id)),
+                  'features': element.features,
+                  'is_new': element.is_new,
+                  'area': element.area  // the item area has nothing to do with the "area". Item area corresponds to the "surface"
+                }
+                // perf : do not filter items based on deja_vu
+                // we expect the response to be clean
+                // eventually we prefer a non-filtered list than a long delay to display it
+                // if (!that.user_deja_vu.includes(element._id)){
+                _.push(item)
+                // }
+              })
+
+              // the keyword 'this' refers to what's inside axios.get()
+              // so this.items and this.count has no sense here
+              that.items = _.slice(0, 3)
+              that.itemsCount = response.data.count
+              that.currentPage = response.data.current_page
+              that.pagesCount = response.data.pages
+
+              that.message = ''
+              that.isLoading = false
+
+              // remove the loading overlay
+              // loader.hide()
+
+            } else {
+              that.message = "{{gettext('no_entries_found', request=request)}}"
+              that.notifierVariant = 'warning'
+              that.isLoading = false
+
+              // RAZ of the fields
+              // in case the data have been populated before
+              that.items = []
+              that.currentPage = 1
+              that.pagesCount = 1
+
+              // remove the loading overlay
+              // loader.hide()
+
+            }
+
+          })
+          .catch(function (error) {
+            console.error(error);
+            that.message = "{{ gettext('unexpected_error', request=request) }}"
+            that.notifierVariant = "warning"
+            that.isLoading = false
+          })
+
+      },
+
+      limitSelectedCitiesText: function(count) {
+        return `et ${count} autres villes`
+      },
+
+      asyncFindCities: function(query) {
+        var that = this
+        if (query.length > 0) {
+          this.isLoadingCities = true
+          axios.get(`/terms/city?zone=${that.zone}&q=${query}`)
+            .then(function (response) {
+              that.citiesList = response.data.results.filter(item => item.trim()!=='')
+              that.isLoadingCities = false
+            })
+            .catch(function (error) {
+              console.error(error);
+            })
+        }
+      },
+
+      viewAllProucts: function() {
+        console.log('viewAllProucts')
+        return `http://localhost:7000/products/list?max_price=${this.max_price}&city=${this.city}`
+      },
+
+      displayPropertySurface: function(card) {
+        if (typeof(card.area)!=='undefined' && card.area!='') {
+          return card.area + ' m2'
+        }
+        return ''
+      }
+
+    },
+    computed: {
+      showMessage : function() {
+        return this.message!==''
+      }
+    }
   })
 
 </script>

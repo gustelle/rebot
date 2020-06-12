@@ -21,8 +21,12 @@ LOGGER = logging.getLogger('app')
 @welcome_blueprint.route('/')
 @inject_user_info
 async def render_welcome(request, user: User):
+
+    zone = request.args.get("zone") or config.ENV.DEFAULT_ZONE
+
     return await utils.render_template(
         "welcome.html",
         request=request,
-        user=user
+        user=user,
+        zone=zone
     )

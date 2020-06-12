@@ -257,10 +257,14 @@ async def render_products_list(request, user: User):
     """
 
     zone = request.args.get("zone") or config.ENV.DEFAULT_ZONE
+    max_price = request.args.get("max_price") or 0
+    city = request.args.get("city") or ''
 
     return await utils.render_template(
         "entries.html",
         request=request,
         zone=zone,
-        user=user
+        user=user,
+        max_price = max_price,
+        city=[c for c in city.split(',') if c.strip()!='']
     )
