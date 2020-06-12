@@ -30,7 +30,8 @@ async def test_get_default_values(test_cli, mocker, dataset):
     assert user.to_dict()['filter'] == {
         'city': [],
         'include_deja_vu': False,
-        'max_price': 0.0
+        'max_price': 0.0,
+        'area': ''
     }
 
 
@@ -80,7 +81,8 @@ async def test_save_user(test_cli, mocker, dataset):
         "filter": {
             "include_deja_vu": "false",
             "city": "h, i",
-            "max_price": "1"
+            "max_price": "1",
+            "area": "omg"
         }
     }
     a_user = User.from_dict(obj)
@@ -96,6 +98,7 @@ async def test_save_user(test_cli, mocker, dataset):
     assert user.filter.include_deja_vu == False
     assert user.filter.city ==  [e.strip() for e in obj["filter"]["city"].split(',')]
     assert user.filter.max_price ==  float(obj["filter"]["max_price"])
+    assert user.filter.area ==  obj["filter"]["area"]
 
 
 async def test_save_partial_no_id(test_cli, mocker, dataset):
@@ -218,7 +221,8 @@ async def test_save_filter(test_cli, mocker, dataset, pyrebase_db, firebase_root
                 })
             ],
             "max_price": float(3),
-            "include_deja_vu": False
+            "include_deja_vu": False,
+            "area": "omg"
         })
     }
     ds = copy.deepcopy(dataset['users']['valid'][1])

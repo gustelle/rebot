@@ -218,10 +218,10 @@
     delimiters: ['[[', ']]'],
     data: {
       isLoading: false,
-      max_price: {{ max_price }},
+      max_price: {{ max_price }}, // max_price can be set in the url
       show_deja_vu: false,
       // selected cities
-      city: {% if city %}{{ city|tojson }}{% else %}[]{% endif %},
+      city: {% if city %}{{ city|tojson }}{% else %}[]{% endif %}, // city can be set in the url
       // possible cities proposed to the user
       citiesList: [],
       isLoadingCities: false,
@@ -253,8 +253,6 @@
 
       loadUserEntries: function() {
 
-        console.log(this.city)
-
         // fetch user filters if user is authenticated
         if (this.user_id!='') {
           var that = this
@@ -266,13 +264,15 @@
               if (filter && typeof(filter.city)!=='undefined' && filter.city.length > 0) {
                 // filter.city can be either a list of elements
                 that.city = filter.city.filter(item => item.trim()!=='');
-
               }
               if (filter && typeof(filter.max_price)!=='undefined' && filter.max_price !== '') {
                 that.max_price = filter.max_price
               }
               if (filter && typeof(filter.include_deja_vu)!=='undefined') {
                 that.show_deja_vu = Boolean(filter.include_deja_vu)
+              }
+              if (filter && typeof(filter.area)!=='undefined' && filter.area!=='') {
+                that.area = filter.area
               }
 
               that.filterEntries()
@@ -434,7 +434,6 @@
 
         this.loadEntries()
         this.loadFacets()
-
       },
 
       // area here is the concept of grouping cities
@@ -447,21 +446,18 @@
           }
         })
         this.filterEntries()
-
       },
 
       filterByCatalog: function(cat) {
 
         this.catalog = cat
         this.filterEntries()
-
       },
 
       filterByCity: function(city) {
 
         this.city = [city]
         this.filterEntries()
-
       },
 
       filterByFeature: function(value) {
@@ -474,14 +470,12 @@
         } else {
           this.selectedFacets.push(value)
         }
-
         this.loadEntries()
       },
 
       saveUserFilter: function() {
 
         var that = this
-
         that.isLoading = true
 
         // pass partial=true to indicate that only the filter should be updated
@@ -489,7 +483,8 @@
           'filter': {
             'max_price': parseInt(that.max_price) || -1,
             'city': that.city,
-            'include_deja_vu': Boolean(that.show_deja_vu)  //force as boolean
+            'include_deja_vu': Boolean(that.show_deja_vu),  //force as boolean
+            'area': that.area
           }
         })
         .then(function (response) {
@@ -504,7 +499,6 @@
           that.notifierVariant = "warning"
           that.isLoading = false
         })
-
       },
 
       onPageChange : function(event) {
@@ -584,7 +578,6 @@
           that.message = "{{ gettext('unexpected_error', request=request) }}"
           that.notifierVariant = "warning"
         })
-
       },
 
       limitSelectedCitiesText: function(count) {
@@ -621,7 +614,6 @@
         }
         return ''
       }
-
     },
     computed: {
       showMessage : function() {

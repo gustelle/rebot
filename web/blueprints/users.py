@@ -36,7 +36,8 @@ def get_user_schema(zone):
                 "properties": {
                     "include_deja_vu": { "type": "boolean" },
                     "city": { "type": "array", "items": {"type": "string"}},
-                    "max_price": { "type": "number" }
+                    "max_price": { "type": "number" },
+                    "area": { "type": "string" }
                 }
             },
             "zonedlist": {
@@ -130,10 +131,7 @@ async def put_user(request, id: str, zone: str, partial: bool=True):
 
         service.save_partial(id, **user_info)
     else:
-        LOGGER.info(f"save_user: {User.from_dict(user_info)}")
         service.save_user(User.from_dict(user_info))
-        LOGGER.info(f"user saved")
-
 
     try:
         # trigger a cleanup task of the user prefs in background

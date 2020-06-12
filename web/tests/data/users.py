@@ -2,6 +2,7 @@ import uuid
 import random
 
 from .products import VALID_PRODUCTS, get_product_id, random_product
+from .areas import random_area
 
 from .base_data import ZONE
 
@@ -17,7 +18,8 @@ VALID_USERS=[
             "filter": {
                 "city": list(set([random_product().get('city') for i in range(0, len(VALID_PRODUCTS)-1)])),
                 "max_price": float(290000),
-                "include_deja_vu": True
+                "include_deja_vu": True,
+                "area": random_area()['name']
             }
         }
 ]
@@ -65,3 +67,6 @@ def assert_user_equals(user_a, user_b):
         if "include_deja_vu" in user_a.get("filter"):
             assert "include_deja_vu" in user_b.get("filter")
             assert bool(user_a.get("filter").get("include_deja_vu")) == bool(user_b.get("filter").get("include_deja_vu"))
+        if "area" in user_a.get("filter"):
+            assert "area" in user_b.get("filter")
+            assert user_a.get("filter").get("area") == user_b.get("filter").get("area")

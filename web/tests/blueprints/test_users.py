@@ -374,6 +374,39 @@ async def test_put_max_price(test_cli, mocker, dataset, pyrebase_db, firebase_ro
     pyrebase_db.child(firebase_root_node + "/users").child(user_test_dict['id']).set(dataset['users']['valid'][1])
 
 
+async def test_put_filter_area(test_cli, mocker, dataset, pyrebase_db, firebase_root_node):
+    """partial udpate of the filter works"""
+    user_test_dict = copy.deepcopy(dataset['users']['valid'])[1]
+    user_test_dict['filter']['area'] = str(uuid.uuid4())
+
+    mock_cleanup = mocker.patch("tasks.cleanup_user")
+    mock_cleanup.return_value = str(uuid.uuid4())
+
+    mock_save = mocker.patch("services.user_service.UserService.save_user")
+
+    # update only the field 'deja_vu'
+    response = await test_cli.put(
+        f"/users/{user_test_dict['id']}?zone={ZONE}",
+        data=json.dumps({"filter": user_test_dict['filter']}),
+        headers={"content-type": "application/json"}
+    )
+
+    # refetch user in firebase
+    user_fetched =  pyrebase_db.child(firebase_root_node + "/users").child(user_test_dict['id']).get().val()
+    assert user_fetched
+
+    # convert to object to pass through all the rules of user objects
+    # like conversion to array ...
+    user_fetched_obj = User.from_dict(user_fetched)
+
+    mock_cleanup.assert_called()
+    mock_save.assert_not_called()  # if not called, means save_partial is called
+    assert_user_equals(user_test_dict, user_fetched_obj.to_dict())
+
+    # reset data for the rest of the tests
+    pyrebase_db.child(firebase_root_node + "/users").child(user_test_dict['id']).set(dataset['users']['valid'][1])
+
+
 async def test_put_create_user_using_partial(test_cli, mocker, dataset, pyrebase_db, firebase_root_node):
     """user is not found --> created"""
     user_test_dict = copy.deepcopy(dataset['users']['valid'])[1]

@@ -94,6 +94,7 @@ class TestUserObject(object):
         assert user.filter.include_deja_vu == bool(u_dict["filter"]["include_deja_vu"])
         assert user.filter.city == u_dict["filter"]["city"]
         assert user.filter.max_price == float(u_dict["filter"]["max_price"])
+        assert user.filter.area == u_dict["filter"]["area"]
 
 
     def test_from_dict_to_list(self, mocker, dataset):
@@ -112,6 +113,7 @@ class TestUserObject(object):
         assert user.filter.include_deja_vu == bool(u_dict["filter"]["include_deja_vu"])
         assert user.filter.city == u_dict["filter"]["city"].split(',')
         assert user.filter.max_price == float(u_dict["filter"]["max_price"])
+        assert user.filter.area == u_dict["filter"]["area"]
 
 
 @pytest.mark.usefixtures("mocker", "dataset")

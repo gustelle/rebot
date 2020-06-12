@@ -1,4 +1,5 @@
 import uuid
+import random
 
 from .products import VALID_PRODUCTS
 
@@ -19,3 +20,9 @@ VALID_AREAS = [
 INVALID_AREAS = [
     {"name": str(uuid.uuid4())}
 ]
+
+
+def random_area():
+    p_length = len(VALID_AREAS)
+    area_index = random.randint(0, p_length-1)
+    return VALID_AREAS[area_index]

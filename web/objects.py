@@ -111,6 +111,9 @@ class UserFilter:
 
         self.max_price = float(dictionary.get('max_price', 0))
 
+        # area is the "name" of the area, refering to a list of cities
+        self.area = dictionary.get('area', '')
+
 
     def to_dict(self):
         """Overrides the parent method to convert arrays to comma separated values"""
@@ -121,9 +124,9 @@ class UserFilter:
         return {
             'include_deja_vu': self.include_deja_vu,
             'city': self.city,
-            'max_price': self.max_price
+            'max_price': self.max_price,
+            'area': self.area
         }
-
 
 
 class User(DictionaryObject):
