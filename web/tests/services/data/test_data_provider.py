@@ -2,6 +2,8 @@
 
 import copy
 import pytest
+import random
+import time
 
 from pytest import raises
 
@@ -13,6 +15,9 @@ from elasticsearch_dsl import Search
 from services.elastic_service import ElasticSession, Product
 from services.data.data_meta import CatalogMeta
 from services.data.data_provider import ProductService
+
+from tests.data.base_data import ZONE
+from tests.data.products import get_product_id
 
 import config
 
@@ -40,6 +45,52 @@ class TestProductService(object):
 
         assert isinstance(p, Product)
         assert p.meta.id == f"{p['catalog']}_{p['sku']}" == f"{a_product['catalog']}_{a_product['sku']}"
+
+
+    async def test_find_sorting(self, monkeypatch, mocker, dataset, elastic_client):
+        """
+        products with "is_new"=True come first
+        then products are sorted by quality index
+        """
+        products = copy.deepcopy(dataset['products']['valid'])
+
+        random_product_1 = random.choice(products)
+        random_product_1['is_new'] = True
+        random_product_1['quality_index'] = 2
+
+        random_product_2 = random.choice(products)
+        random_product_2['is_new'] = True
+        random_product_2['quality_index'] = 2.1
+
+        # the first product is is_new = true
+        # the others are is_new = false --> the 1st product should come first in the results
+        for i, p in enumerate(products):
+            if get_product_id(p)!=get_product_id(random_product_1)\
+                and get_product_id(p)!=get_product_id(random_product_2):
+                p['is_new'] = False
+            elastic_client.index(
+                    index=ZONE,
+                    doc_type='_doc',
+                    id=get_product_id(p),
+                    body=p,
+                    refresh=True
+                )
+
+        # wait for the refresh to be effective
+        # short sleep times are unsafe
+        time.sleep(5)
+
+        service = CatalogMeta()
+        catalog_dataset = dataset['catalogs']['valid']
+        catalog = service.get_the_catalog(catalog_dataset[0]['short_name'])
+        data_provider = ProductService(catalog.zone)
+
+        ps, count = data_provider.find()
+
+        # the 1st item of the results should be random_product_2, then random_product_1
+        # then the others
+        assert ps[0].meta.id == get_product_id(random_product_2)
+        assert ps[1].meta.id == get_product_id(random_product_1)
 
 
     async def test_find_product_by_price_and_city(self, monkeypatch, mocker, dataset):

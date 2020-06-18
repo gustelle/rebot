@@ -154,6 +154,49 @@ class TestIndexTask(object):
         assert saved_product['features'] == "my_features"
 
 
+    async def test_quality_index(self, monkeypatch, mocker, dataset):
+        """"""
+        a_product = {
+            "url": "",
+            "city": "",
+            "title": "Maison 3 pièces Houplines",
+            "description": "EXCLUSIVITE ! A deux pas du centre ville et des commerces de proximité, le Cabinet GLV Immobilier vous propose cette maison lumineuse des années 30. Elle se compose d'un vaste salon séjour  ouvert sur la cuisine équipée.L'étage vous offre 2 chambres et une salle de douche. Vous profiterez également d'un extérieur bien exposé. Idéale première acquisition ou investissement locatif ! Pour visiter, contacter Marielle Demon Agent Commercial SIREN 839582657 RSAC 2018AC00099 au 07.72.25.69.25.",
+            "media": [
+              "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_0.jpg",
+              "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_1.jpg",
+              "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_2.jpg",
+              "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_3.jpg",
+              "http://www.glv-immobilier.fr/annonce/vente-maison-3-pieces-houplines-9502md_4.jpg"
+            ],
+            "sku": "9502MD",
+            "price": 95000.0,
+            "catalog": "glv",
+            "area": 90
+        }
+
+        mock_save = mocker.patch("search_index.ElasticCommand.save")
+        mock_save.return_value = True
+
+        # mock the FeaturesExtractor to verify its return value is passed to the product
+        mock_extractor = mocker.patch("nlp.FeaturesExtractor.extract")
+        mock_extractor.return_value = ["my_features"]
+
+        # wait for the task to complete with .get()
+        do_index([a_product], CATALOG, ZONE)
+
+        # expected QI :
+        QI = 0
+        QI += 1 # title
+        QI += 1 # description
+        QI += 2 # area is completed
+        QI += 2 # media >= 3
+        QI += 2 # 1 feature existing ['my_features']
+
+        # assert the object saved is passed the features extracted
+        saved_product = mock_save.call_args[0][2]
+        assert saved_product['quality_index'] == QI
+
+
     @pytest.mark.skip
     async def test_city_sanitization(self, monkeypatch, mocker, dataset):
         """This test is obsolete, city sanitization has been removed

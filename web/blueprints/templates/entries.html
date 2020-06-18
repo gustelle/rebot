@@ -84,7 +84,7 @@
         </b-col>
       </b-row>
       {% endif %}
-      <b-row>
+      <b-row v-if="items.length > 0">
         <b-col>
           <b-button class="facet" v-for="facet in facets" @click="filterByFeature(facet)" :variant="facetVariant(facet)">[[ facet ]]</b-button>
         </b-col>

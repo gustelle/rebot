@@ -112,6 +112,13 @@ class _ObjectQuery():
             catalog=catalog
         )
 
+        # new products come first, then order by quality_index
+        es_query = es_query.sort(
+                {"is_new" : {"order" : "desc"}}, # "T"rue comes before "F"alse
+                {"quality_index": {"order" : "desc"}} # the highest quality is the best
+        )
+
+        # paginate, need to think soon of scrolling
         paginate_start = config.ES.RESULTS_PER_PAGE*(page-1)
         paginate_end = config.ES.RESULTS_PER_PAGE*(page)
 

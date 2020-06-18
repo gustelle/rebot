@@ -75,6 +75,29 @@ def do_index(products_list, catalog, zone):
                 'errors': self.errors
             }
 
+    def quality_index(doc):
+        """Computes an index to promote data with good quality
+        """
+        standard_fields = ['title', 'description']
+        # high_value_fields = ['area', 'media', 'features']
+        qi = 0
+
+        for f in standard_fields:
+            # for string, check it's not blank
+            if f in doc and doc[f] and isinstance(doc[f], str) and doc[f].strip():
+                qi += 1
+
+        if 'area' in doc and doc['area']>0:
+            qi += 2
+
+        if 'media' in doc and doc['media'] and utils.is_list(doc['media']) and len(doc['media'])>=3:
+            qi += 2
+
+        if 'features' in doc and doc['features'] and utils.is_list(doc['features']):
+            qi += 2
+
+        return qi
+
     result = TaskResult()
 
     try:
@@ -91,6 +114,11 @@ def do_index(products_list, catalog, zone):
 
         for product_dict in products_list:
 
+            if not isinstance(product_dict, dict):
+                LOGGER.error(f"Dictionnary expected, provided {type(product_dict)}")
+                result.increment_errors(1)
+                continue
+
             if "sku" not in product_dict or product_dict["sku"].strip()=="":
                 LOGGER.error(f"SKU required to save {product_dict}, skipped")
                 result.increment_errors(1)
@@ -104,6 +132,9 @@ def do_index(products_list, catalog, zone):
                 extractor = FeaturesExtractor(product_dict['description'])
                 product_dict['features'] = extractor.extract()
 
+            # quality index
+            product_dict['quality_index'] = quality_index(product_dict)
+
             # sanitize some fields, because scraping leads to unclean data
             # for fields that are used in faceting
             # replace special chars with a blank space, redundant blank spaces will be removed afterwards
@@ -115,18 +146,16 @@ def do_index(products_list, catalog, zone):
                 # two properties of 2 different catalogs may have the same sku
                 # need to have a safe id,
                 #   because some chars like ':' are used to associate the id with user prefs in the frontend
-                doc_id = utils.safe_text(f"{catalog}_{product_dict['sku']}")
-
-                LOGGER.debug(f"Index requested for {doc_id}")
+                doc_id = utils.safe_text(f"{catalog}_{product_dict['sku']}", accept=["_"])  # do not remove "_" from the id
 
                 # keep track of updates
                 # will be usefull for the frontend to highlight "new" properties scraped
                 existing_doc = ElasticCommand.get(zone, doc_id)
-                LOGGER.debug(f"Document Existing {doc_id} : {existing_doc}")
 
                 today = datetime.today().strftime('%Y-%m-%d')
 
                 if existing_doc is not None:
+                    LOGGER.debug(f"Existing {doc_id} will be updated")
                     product_dict['is_new'] = False
                     # update the scraping_end_date
                     # the scraping_start_date remains unchanged

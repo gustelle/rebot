@@ -55,7 +55,8 @@ _MAPPING = {
             "price" : {"type" : "scaled_float", "scaling_factor": 100},
             "area" : {"type" : "scaled_float", "scaling_factor": 100},
             "media" :  {"type" : "text", "index": "false"},
-            "url" : {"type" : "text", "index": "false"}
+            "url" : {"type" : "text", "index": "false"},
+            "quality_index": {"type" : "float"}, # computed, used for ranking & highlights
         }
     }
 }

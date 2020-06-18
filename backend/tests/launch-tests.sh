@@ -6,4 +6,4 @@ export PYTHONPATH=$PYTHONPATH:/app
 pytest -vv --testdox -s
 
 # run tests
-# python -m pytest tests/jobs/test_elastic_task.py::TestIndexTask::test_city_sanitization -vv --testdox -s
+# python -m pytest tests/test_utils.py -vv --testdox -s

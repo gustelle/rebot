@@ -30,6 +30,7 @@ services:
     image: gustelle/rep_scraper_scheduled_tasks
     build:
       context: .
+      dockerfile: Dockerfile-tasks
     environment:
       - ES_HOST=${ELASTIC_HOST}
       - ES_PAGE_SIZE=${ELASTIC_PAGE_SIZE}
@@ -42,7 +43,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - SENTRY_URL=${SENTRY_URL}
       - ENVIRONMENT=${ENVIRONMENT}
-    entrypoint: rqscheduler --host ${REDIS_HOST} --port ${REDIS_PORT} --password ${REDIS_PASSWORD}
+    # entrypoint: rqscheduler --host ${REDIS_HOST} --port ${REDIS_PORT} --password ${REDIS_PASSWORD}
     depends_on:
       - dependencies
 

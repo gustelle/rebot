@@ -15,7 +15,8 @@ VALID_PRODUCTS = [
     ],
     "sku": "9502MD",
     "price": 95000.0,
-    "catalog": "glv"
+    "catalog": "glv",
+    "area": 90
 },
 {
     "url": "http://www.newdealimmobilier.fr/bien/5661-duplex-lille",

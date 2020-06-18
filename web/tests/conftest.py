@@ -1,11 +1,11 @@
-import os, errno
-import asyncio
-import sys
-import shutil
-import fnmatch
-import codecs
+import os #,errno
+# import asyncio
+# import sys
+# import shutil
+# import fnmatch
+# import codecs
 import random
-import string
+# import string
 import time
 
 import pytest
@@ -24,6 +24,56 @@ import config
 
 
 FB_CI_ROOT = 'real-estate-ci'
+
+# types will be removed in Elastic 7
+# be careful if you use something different than _doc as doc_type
+_DOCUMENT_TYPE = '_doc'
+# index settings and mappings
+_SETTINGS = {
+    "analysis":{
+        "normalizer": {
+            # this normalizer enables to standardize the keywords
+            # transforming all ascii sensitive chars into standard chars (ex: Bière --> biere)
+            "folding_normalizer" : {
+                "type"          : "custom",
+                "filter"        : ["lowercase", "asciifolding"]
+            }
+        },
+        "analyzer": {
+            # analyze if for Text field what normalizer is for keyword fields
+            # this enables to make a case insensitive search
+            "folding_analyzer" : {
+                "type"          : "custom",
+                "tokenizer"     : "standard",
+                "filter"        : ["lowercase", "asciifolding"],
+                "char_filter":  [ "html_strip" ]
+            }
+        }
+    },
+    "number_of_shards": config.ES.ES_SHARDS,
+    "number_of_replicas": config.ES.ES_REPLICAS
+}
+
+_MAPPING = {
+    _DOCUMENT_TYPE: {
+        "properties": {
+            "scraping_start_date" : {"type" : "date"},
+            "scraping_end_date" : {"type" : "date"},
+            "is_new" : {"type" : "boolean"},
+            "catalog" : {"type" : "keyword", "normalizer": "folding_normalizer"},
+            "sku" : {"type" : "text"},
+            "title" : {"type" : "text", "analyzer": "folding_analyzer", "norms": "false"},
+            "description" : {"type" : "text", "analyzer": "folding_analyzer", "norms": "false"},
+            "city" : {"type" : "keyword", "normalizer": "folding_normalizer"},
+            "features" : {"type" : "keyword", "normalizer": "folding_normalizer"},
+            "price" : {"type" : "scaled_float", "scaling_factor": 100},
+            "area" : {"type" : "scaled_float", "scaling_factor": 100},
+            "media" :  {"type" : "text", "index": "false"},
+            "url" : {"type" : "text", "index": "false"},
+            "quality_index": {"type" : "float"}, # computed, used for ranking & highlights
+        }
+    }
+}
 
 async def mock_coro(mock=None):
     return mock
@@ -66,6 +116,13 @@ def pyrebase_db(monkeysession):
 
 
 @pytest.fixture(scope='session')
+def elastic_client(monkeysession):
+    host = os.getenv('ES_HOST')
+    elastic_client = Elasticsearch(hosts=[host])
+    yield elastic_client
+
+
+@pytest.fixture(scope='session')
 def firebase_root_node(monkeysession):
     yield FB_CI_ROOT
 
@@ -86,7 +143,12 @@ def dataset(monkeysession):
     elastic_client = Elasticsearch(hosts=[host])
 
     try:
-        elastic_client.indices.create(index=catalogs_test_index)
+        elastic_client.indices.create(
+            index=catalogs_test_index,
+            body={
+                'settings': _SETTINGS,
+                'mappings': _MAPPING
+            })
     except ElasticsearchException as e:
         print(f"Index init for {catalogs_test_index} error: {e}")
 

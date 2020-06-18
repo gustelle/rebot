@@ -108,10 +108,10 @@ class UserService(FirebaseService):
             for arg_name in args:
                 if arg_name in user_model_atts:
                     if args[arg_name]:
-                        self.logger.info(f"Updating {arg_name} ({args[arg_name]})")
+                        self.logger.debug(f"Updating {arg_name} ({args[arg_name]})")
                         setattr(_user_to_update, arg_name, args[arg_name])
                     else:
-                        self.logger.info(f"User {id}: {arg_name} ignored [{args[arg_name]}]")
+                        self.logger.debug(f"User {id}: {arg_name} ignored [{args[arg_name]}]")
 
         self.set_value(id, _user_to_update.to_dict())
         return self.get_user(id)
