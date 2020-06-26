@@ -116,7 +116,12 @@ class _ObjectQuery():
         es_query = es_query.sort(
                 {"is_new" : {"order" : "desc"}}, # "T"rue comes before "F"alse
                 {"quality_index": {"order" : "desc"}} # the highest quality is the best
-        )
+            )
+
+        # only query business fields, tech fields should not be shown
+        es_query = es_query.source([
+            'sku', 'title', 'description', 'city', 'features', 'price', 'media', 'url', 'catalog', 'is_new', 'area'
+        ])
 
         # paginate, need to think soon of scrolling
         paginate_start = config.ES.RESULTS_PER_PAGE*(page-1)

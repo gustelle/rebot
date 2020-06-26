@@ -7,6 +7,7 @@ from distutils.util import strtobool
 import pytest
 
 import ujson as json
+from jsonschema import validators, Draft4Validator
 
 from main import app
 
@@ -19,6 +20,25 @@ from objects import User
 import config
 
 from tests.data.base_data import ZONE
+from tests.data.products import get_product_id
+
+
+ITEM_SCHEMA = {
+    "type": "object",
+    "properties" : {
+        "id": {"type" : "string"},
+        "sku": {"type" : "string"},
+        "catalog": {"type" : "string"},
+        "title"     : { "type" : "string", "minLength": 0}, # allow blank strings
+        "description": { "type" : "string"},
+        "price"     : { "type" : "number", "minimum": 0},
+        "city"    : { "type" : "string"},
+        "media" : {"type": "array", "items": { "type": "string" }},
+        "url" : {"type" : "string"},
+        "area": { "type" : "number", "minimum": 0}
+    },
+    "required": ["id", "sku", "catalog", "title", "price", "city", "url"],
+}
 
 
 async def test_get(test_cli, mocker, dataset):
@@ -26,20 +46,19 @@ async def test_get(test_cli, mocker, dataset):
     training_dataset = copy.deepcopy(dataset['products']['valid'])
 
     data_provider = ProductService(ZONE)
-
-    # product id
-    id = f"{training_dataset[0]['catalog']}_{training_dataset[0]['sku']}"
-
+    id = get_product_id(training_dataset[0])
     entry = data_provider.get(id=id)
 
     response = await test_cli.get(f"/products/{id}?zone={ZONE}")
-
     jay = await response.json()
 
     result = jay.get('result')
+    print(f"result: {result}")
+    v = Draft4Validator(ITEM_SCHEMA)
+    errors = sorted(v.iter_errors(result), key=lambda e: e.path)
 
-    assert result and result == entry.to_json(include_meta=True)
-
+    assert not errors
+    assert result and result['id'] == id
 
 
 async def test_get_jsonschema_error(test_cli, mocker, dataset):
@@ -48,20 +67,13 @@ async def test_get_jsonschema_error(test_cli, mocker, dataset):
     # mock an invalid object returned by Elasticsearch
     training_dataset = copy.deepcopy(dataset['products']['valid'])
 
-    # insert an _id which is required for schema validation
-    for p in training_dataset:
-        p['_id'] = f"{p['catalog']}_{p['sku']}"
+    id = get_product_id(training_dataset[0])
 
     # delete the sku which will cause the json schema validation error
-    a_product = training_dataset[0]
-    sku = a_product['sku']
-    del a_product['sku']
+    del training_dataset[0]['sku']
 
     mock_es = mocker.patch("services.data.data_provider.ProductService.get")
-    mock_es.return_value = Product.from_dict(a_product)
-
-    # product id
-    id = f"{training_dataset[0]['catalog']}_{sku}"
+    mock_es.return_value = Product.from_dict(training_dataset[0])
 
     response = await test_cli.get(f"/products/{id}?zone={ZONE}")
 
@@ -74,7 +86,7 @@ async def test_get_no_zone(test_cli, mocker, dataset):
 
     training_dataset = copy.deepcopy(dataset['products']['valid'])
     # product id
-    id = f"{training_dataset[0]['catalog']}_{training_dataset[0]['sku']}"
+    id = get_product_id(training_dataset[0])
 
     response = await test_cli.get(f"/products/{id}?zone=")
 
@@ -114,7 +126,7 @@ async def test_list(test_cli, mocker, dataset):
     list_entries = list([entry.to_json(include_meta=True) for entry in entries])
     response_prods = jay.get('products')
 
-    assert all(_prod in list_entries for _prod in response_prods)
+    assert sorted([k['_id'] for k in list_entries]) == sorted([k['id'] for k in response_prods])
     assert jay.get('count') == count
 
     catalogs = dict()
@@ -135,6 +147,10 @@ async def test_list_tbv(test_cli, mocker, dataset):
 
     response = await test_cli.get(f"/products?zone={ZONE}&user_id={users_dataset[1]['id']}&tbv=true")
 
+    t = await response.text()
+
+    print(t)
+
     jay = await response.json()
 
     # filter on TBV
@@ -144,13 +160,9 @@ async def test_list_tbv(test_cli, mocker, dataset):
 
     response_prods = jay.get('products')
 
-    # print([x['_id'] for x in list_entries])
-    # print("----------")
-    # print([x['_id'] for x in response_prods])
-
     # perfect match
-    assert all(_prod['_id'] in [x['_id'] for x in list_entries] for _prod in response_prods)
-    assert all(_prod['_id'] in [x['_id'] for x in response_prods] for _prod in list_entries)
+    assert all(_prod['id'] in [x['_id'] for x in list_entries] for _prod in response_prods)
+    assert all(_prod['_id'] in [x['id'] for x in response_prods] for _prod in list_entries)
 
 
 async def test_list_products_jsonschema_error(test_cli, mocker, dataset):
@@ -196,8 +208,8 @@ async def test_list_filter_feature(test_cli, mocker, dataset):
     list_entries = list([entry.to_json(include_meta=True) for entry in entries])
     response_prods = jay.get('products')
 
-    assert all("3 chambres" in _prod.features for _prod in list_entries)
-    assert all(_prod in list_entries for _prod in response_prods)
+    assert all("3 chambres" in _prod['features'] for _prod in list_entries)
+    assert all(_prod['id'] in [k['_id'] for k in list_entries] for _prod in response_prods)
     assert jay.get('count') == count
 
 
@@ -219,9 +231,9 @@ async def test_list_combine_features(test_cli, mocker, dataset):
     list_entries = list([entry.to_json(include_meta=True) for entry in entries])
     response_prods = jay.get('products')
 
-    assert all("3 chambres" in _prod.features for _prod in list_entries)
-    assert all("jardin" in _prod.features for _prod in list_entries)
-    assert all(_prod in list_entries for _prod in response_prods)
+    assert all("3 chambres" in _prod['features'] for _prod in list_entries)
+    assert all("jardin" in _prod['features'] for _prod in list_entries)
+    assert all(_prod['id'] in [k['_id'] for k in list_entries] for _prod in response_prods)
     assert jay.get('count') == count
 
 
@@ -257,12 +269,12 @@ async def test_list_exclude_deja_vu(test_cli, mocker, dataset):
 
     # assert list are the same
     # which means all the products of user_entries are in response_prods and vice-versa
-    assert all(_p.meta.id in [k['_id'] for k in response_prods] for _p in user_entries)
+    assert all(_p.meta.id in [k['id'] for k in response_prods] for _p in user_entries)
 
     # print([k.meta.id for k in user_entries])
     # print("--------------------------------")
     # print([_p['_id'] for _p in response_prods])
-    assert all(_p['_id'] in [k.meta.id for k in user_entries] for _p in response_prods)
+    assert all(_p['id'] in [k.meta.id for k in user_entries] for _p in response_prods)
 
 
 async def test_list_include_deja_vu(test_cli, mocker, dataset):
@@ -294,8 +306,8 @@ async def test_list_include_deja_vu(test_cli, mocker, dataset):
 
     # assert list are the same
     # which means all the products of user_entries are in response_prods and vice-versa
-    assert all(_p.meta.id in [k['_id'] for k in response_prods] for _p in raw_entries)
-    assert all(_p['_id'] in [k.meta.id for k in raw_entries] for _p in response_prods)
+    assert all(_p.meta.id in [k['id'] for k in response_prods] for _p in raw_entries)
+    assert all(_p['id'] in [k.meta.id for k in raw_entries] for _p in response_prods)
 
 
 async def test_list_override_city(test_cli, mocker, dataset):

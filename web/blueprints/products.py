@@ -39,7 +39,7 @@ LOGGER = logging.getLogger('app')
 ITEM_SCHEMA = {
     "type": "object",
     "properties" : {
-        "_id": {"type" : "string"},
+        "id": {"type" : "string"},
         "sku": {"type" : "string"},
         "catalog": {"type" : "string"},
         "title"     : { "type" : "string", "minLength": 0}, # allow blank strings
@@ -48,9 +48,29 @@ ITEM_SCHEMA = {
         "city"    : { "type" : "string"},
         "media" : {"type": "array", "items": { "type": "string" }},
         "url" : {"type" : "string"},
+        "area": { "type" : "number", "minimum": 0}
     },
-    "required": ["_id", "sku", "catalog", "title", "price", "city", "url"],
+    "required": ["id", "sku", "catalog", "title", "price", "city", "url"],
 }
+
+
+def _format_item_response(dict_item):
+    """removes technical fields starting with '_' from an item
+    the item must be of type dict"""
+
+    if not isinstance(dict_item, dict):
+        raise ValueError(f"expecting a dict, provided a {type(dict_item)}")
+
+    # keep the _id but render it as "id"
+    if "_id" in dict_item:
+        dict_item['id'] = dict_item.get('_id')
+
+    # new remove _ fields
+    for key in list(dict_item.keys()):
+        if key.startswith("_"):
+            del dict_item[key]
+
+    return dict_item
 
 
 @products_blueprint.route('/<id>', methods=["GET"])
@@ -58,7 +78,6 @@ ITEM_SCHEMA = {
 async def get_product(request, id: str, zone: str = ''):
     """
     """
-
     if not zone or not zone.strip():
         raise InvalidUsage(f"zone must be set")
 
@@ -74,6 +93,8 @@ async def get_product(request, id: str, zone: str = ''):
 
     # check schema
     item = result.to_json(include_meta=True)
+    item = _format_item_response(item)
+    item['id'] = id
 
     v = Draft4Validator(ITEM_SCHEMA)
     errors = sorted(v.iter_errors(item), key=lambda e: e.path)
@@ -88,7 +109,6 @@ async def get_product(request, id: str, zone: str = ''):
         'success': True,
         'result': item
     })
-
 
 
 @products_blueprint.route('/', methods=["GET"])
@@ -141,113 +161,111 @@ async def list_products(
     if not catalog.strip():
         catalog = None
 
-        ##################################################
-        # filter based on user prefs
-        exclude_items = None
+    ##################################################
+    # filter based on user prefs
+    exclude_items = None
 
-    try:
-        exclude_items = None
-        if user and not user.filter.include_deja_vu:
-            exclude_items = user.deja_vu.get(zone)
+    if user and not user.filter.include_deja_vu:
+        exclude_items = user.deja_vu.get(zone)
 
-        # query entries
-        service = ProductService(zone)
-        entries, count = service.find(
-            page=page,
-            city=city,
-            max_price=max_price,
-            exclude=exclude_items,
-            feature=feature,
-            catalog=catalog
-        )
+    # query entries
+    service = ProductService(zone)
+    entries, count = service.find(
+        page=page,
+        city=city,
+        max_price=max_price,
+        exclude=exclude_items,
+        feature=feature,
+        catalog=catalog
+    )
 
-        results = [_entry.to_json(include_meta=True) for _entry in entries]
+    # fetch meta to have the _id
+    results = [_entry.to_json(include_meta=True) for _entry in entries]
+    results = [_format_item_response(item) for item in results]
 
-        LOGGER.debug(f"Filtered Results ({count} entries) : {[k.meta.id for k in entries]}")
+    LOGGER.debug(f"Sample result fetched: {results[0]}")
 
-        ##################################################
-        # Mark products as deja_vu or TBV
+    ##################################################
+    # Mark products as deja_vu or TBV
+    for x in results:
+        if user and user.tbv and x['id'] in user.tbv.get(zone):
+            x['tbv']=True
+        if user and user.deja_vu and x['id'] in user.deja_vu.get(zone) and user.filter.include_deja_vu:
+            x['deja_vu']=True
+
+    ##################################################
+    # eventually filter properties marked as tbv
+    if tbv:
+        filtered_list = []
         for x in results:
-            if user and user.tbv and x['_id'] in user.tbv.get(zone):
-                x['tbv']=True
-            if user and user.deja_vu and x['_id'] in user.deja_vu.get(zone) and user.filter.include_deja_vu:
-                x['deja_vu']=True
+            if x.get('tbv'):
+                filtered_list.append(x)
+            else:
+                count -= 1
+        results = filtered_list
 
-        ##################################################
-        # eventually filter properties marked as tbv
-        if tbv:
-            filtered_list = []
-            for x in results:
-                if x.get('tbv'):
-                    filtered_list.append(x)
-                else:
-                    count -= 1
-            results = filtered_list
+    ##################################################
+    # map catalog info
+    service = CatalogMeta()
+    catalogs = dict()
+    for catalog_item in service.get_catalogs():
+        catalogs[catalog_item.short_name] = catalog_item.to_dict()
 
-        ##################################################
-        # map catalog info
-        service = CatalogMeta()
-        catalogs = dict()
-        for catalog_item in service.get_catalogs():
-            catalogs[catalog_item.short_name] = catalog_item.to_dict()
+    # check schema of the products
+    items = {
+        "reps": results
+    }
 
-        # check schema of the products
-        items = {
-            "reps": results
-        }
-
-        ITEMS_LIST_SCHEMA = {
-            "type": "object",
-            "properties" : {
-                "reps": {"type": "array", "items": {
-                    "$ref": "#/definitions/rep" }
-                }
-            },
-            "definitions": {
-                "rep": ITEM_SCHEMA
+    ITEMS_LIST_SCHEMA = {
+        "type": "object",
+        "properties" : {
+            "reps": {"type": "array", "items": {
+                "$ref": "#/definitions/rep" }
             }
+        },
+        "definitions": {
+            "rep": ITEM_SCHEMA
         }
+    }
 
-        # v&rification globale pour des raisons de perf
-        # vérification plus fine si erreur
-        v = Draft4Validator(ITEMS_LIST_SCHEMA)
-        errors = sorted(v.iter_errors(items), key=lambda e: e.path)
-        if errors:
+    # v&rification globale pour des raisons de perf
+    # vérification plus fine si erreur
+    v = Draft4Validator(ITEMS_LIST_SCHEMA)
+    errors = sorted(v.iter_errors(items), key=lambda e: e.path)
+    if errors:
 
-            # ne pas pénaliser l'ensemble de la réponse
-            # supprimer les items qui posent probleme
-            safe_list = []
-            for rep in results:
+        # ne pas pénaliser l'ensemble de la réponse
+        # supprimer les items qui posent probleme
+        safe_list = []
+        for rep in results:
 
-                v = Draft4Validator(ITEM_SCHEMA)
-                errors = sorted(v.iter_errors(rep), key=lambda e: e.path)
+            v = Draft4Validator(ITEM_SCHEMA)
+            errors = sorted(v.iter_errors(rep), key=lambda e: e.path)
 
-                if errors:
-                    LOGGER.warning(f"Error in the schema of {rep}: {[e.message for e in errors]}")
-                    # item is not inserted in the list
-                    # withdraw it from the total count
-                    count -= 1
-                else:
-                    safe_list.append(rep)
+            if errors:
+                LOGGER.warning(f"Error in the schema of {rep}: {[e.message for e in errors]}")
+                # item is not inserted in the list
+                # withdraw it from the total count
+                count -= 1
+            else:
+                safe_list.append(rep)
 
-            # final list returned to the user
-            results = safe_list
+        # final list returned to the user
+        results = safe_list
 
-        # and refresh pagination after all the filterings
-        rest = count%config.ES.RESULTS_PER_PAGE
-        pages = count//config.ES.RESULTS_PER_PAGE if rest == 0 else count//config.ES.RESULTS_PER_PAGE + 1
+    # and refresh pagination after all the filterings
+    rest = count%config.ES.RESULTS_PER_PAGE
+    pages = count//config.ES.RESULTS_PER_PAGE if rest == 0 else count//config.ES.RESULTS_PER_PAGE + 1
 
-        return response.json({
-            'success': True,
-            'products': results,
-            'catalogs': catalogs,
-            'count': count,
-            'pages': pages,
-            'current_page': page,
-        })
-    except Exception as e:
-        LOGGER.error(e)
-        raise ServerError(e)
+    return response.json({
+        'success': True,
+        'products': results,
+        'catalogs': catalogs,
+        'count': count,
+        'pages': pages,
+        'current_page': page,
+    })
+
 
 
 ###################################################################################################

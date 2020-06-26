@@ -331,15 +331,15 @@
                 let item = {
                   'title' : element.title,
                   'description': element.description,
-                  'id': element._id,
+                  'id': element.id,
                   'sku': element.sku,
                   'catalog': element.catalog,
                   'city': element.city,
                   'price': element.price,
                   'url': element.url,
                   'media': element.media,
-                  'tbv': (that.user_tbv.includes(element._id)),
-                  'deja_vu': (that.user_deja_vu.includes(element._id)),
+                  'tbv': (that.user_tbv.includes(element.id)),
+                  'deja_vu': (that.user_deja_vu.includes(element.id)),
                   'features': element.features,
                   'is_new': element.is_new,
                   'area': element.area  // the item area has nothing to do with the "area". Item area corresponds to the "surface"

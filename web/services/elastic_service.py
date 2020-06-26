@@ -164,18 +164,18 @@ class Serializable(Document):
         if include_meta:
             doc = self.to_flat_dict()
         else:
-            doc = self.to_dict()
+            doc = self.to_dict(include_meta=False)
 
         # convert datetime for serialization
         for key, value in doc.items():
             if isinstance(value, datetime):
                 doc[key] = value.isoformat()
-
+        
         return doc
 
 
     def to_flat_dict(self):
-        """flattens the dict hierarchy"""
+        """flattens the object to a dict"""
 
         _all_fields = self.to_dict(include_meta=True)
         _source = _all_fields['_source']
@@ -226,14 +226,7 @@ class Serializable(Document):
         return obj
 
 
-class BaseItem(Serializable):
-
-    # always put a timestamp on save
-    def save(self, **kwargs):
-        return super(BaseItem, self).save(**kwargs)
-
-
-class CatalogItem(BaseItem):
+class CatalogItem(Serializable):
 
     ######## Shared fields ############
 
@@ -243,9 +236,6 @@ class CatalogItem(BaseItem):
     is_new = Boolean(index=True, required=False)
 
     catalog = Keyword(normalizer='folding_normalizer', index=True, required=True)
-
-    def save(self, **kwargs):
-        return super(CatalogItem, self).save(**kwargs)
 
 
 class Product(CatalogItem):
@@ -263,6 +253,9 @@ class Product(CatalogItem):
     features = Keyword(normalizer='folding_normalizer', index=True, multi=True)
 
     price = ScaledFloat(100, index=True, required=True)
+
+    # area is the surface
+    area = ScaledFloat(100, index=True, required=True)
 
     # this list of media URI (video, images, ...)
     media = Text(index=False, multi=True, required=True)
